@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OpenMontage · Observer</title>
+<style>
+  /* ---- Design tokens (editing-suite dark) ---- */
+  :root{
+    --bg:#0E0F12; --panel:#15171C; --card:#1C1F26; --card2:#23262E;
+    --line:#2A2E37; --line2:#363b45; --text:#E7E9ED; --mut:#9AA0AB; --faint:#646b78;
+    --accent:#E0A23C; --accent-bg:#241c10; --accent-line:#4a3a1c;
+    --run:#4DA3FF; --run-bg:#10243a; --done:#3FB950; --done-dim:#2c5a3c; --fail:#F85149; --fail-bg:#2a1414;
+    --mono:'Roboto Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+    --sans:'Inter',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:13px;-webkit-font-smoothing:antialiased}
+  a{color:inherit;text-decoration:none}
+  .mono{font-family:var(--mono)}
+  .mut{color:var(--mut)} .faint{color:var(--faint)} .accent{color:var(--accent)}
+  /* ---- Layout ---- */
+  .app{display:flex;min-height:100vh}
+  .rail{width:220px;flex:none;background:var(--panel);border-right:1px solid var(--line);
+    padding:22px 16px 18px;display:flex;flex-direction:column;gap:6px;position:sticky;top:0;height:100vh}
+  .brand{display:flex;align-items:center;gap:10px;padding-bottom:10px}
+  .brand b{font-weight:600;font-size:15px} .brand .sub{font-family:var(--mono);font-size:10.5px;color:var(--faint)}
+  .nav{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 10px;border-radius:8px;color:var(--mut);cursor:pointer}
+  .nav:hover{background:#1a1d24}
+  .nav.active{background:var(--card2);color:var(--text);font-weight:500}
+  .nav .l{display:flex;align-items:center;gap:10px}
+  .grow{flex:1 1 auto}
+  .foot{display:flex;align-items:center;gap:8px;color:var(--mut)}
+  .rail .path{font-family:var(--mono);font-size:10.5px;color:var(--faint);margin-top:4px}
+  .main{flex:1 1 auto;padding:26px 32px 40px;max-width:1280px}
+  /* ---- Primitives ---- */
+  .dot{width:7px;height:7px;border-radius:50%;flex:none}
+  .pill{display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border-radius:20px;font-size:11px;font-weight:500;background:var(--card2);color:var(--mut)}
+  .chip{display:inline-flex;padding:3px 7px;border-radius:5px;font-family:var(--mono);font-size:10px;background:var(--card2);color:var(--mut)}
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+  .panel h4{margin:0 0 12px;font-size:11px;letter-spacing:.04em;color:var(--faint);font-weight:600}
+  .hdr{font-size:11px;letter-spacing:.04em;color:var(--faint);font-weight:600}
+  .row{display:flex;align-items:center;gap:8px} .between{justify-content:space-between}
+  .stack{display:flex;flex-direction:column}
+  /* ---- Stepper ---- */
+  .stepper{display:flex;gap:3px}
+  .stepper .seg{width:24px;height:3px;border-radius:2px;background:var(--line)}
+  .seg.done{background:var(--done-dim)} .seg.run{background:var(--run)} .seg.needs{background:var(--accent)} .seg.fail{background:var(--fail)}
+  .bigstep{position:relative;height:62px;margin-top:8px}
+  .bigstep .track{position:absolute;top:13px;left:14px;right:14px;height:2px;background:var(--line)}
+  .bigstep .fill{position:absolute;top:13px;left:14px;height:2px;background:var(--done-dim)}
+  .bigstep .node{position:absolute;top:0;transform:translateX(-50%);text-align:center;width:96px}
+  .bigstep .mk{width:14px;height:14px;border-radius:50%;margin:6px auto 0;background:var(--card);border:1.5px solid var(--line)}
+  .mk.done{background:var(--done);border-color:var(--done)} .mk.needs{background:var(--accent);border-color:var(--accent);box-shadow:0 0 0 4px var(--accent-bg)}
+  .mk.run{background:var(--run);border-color:var(--run)} .mk.fail{background:var(--fail);border-color:var(--fail)}
+  .bigstep .lab{margin-top:7px;font-size:9.5px;color:var(--faint)}
+  .lab.done{color:var(--mut)} .lab.needs{color:var(--accent);font-weight:600} .lab.fail{color:var(--fail)}
+  /* ---- Cards ---- */
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(264px,1fr));gap:16px}
+  .pcard{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;cursor:pointer;transition:border-color .15s}
+  .pcard:hover{border-color:var(--line2)}
+  .thumb{height:148px;position:relative}
+  .thumb .ov{position:absolute;font-size:11px}
+  .pcard .body{padding:13px 14px 14px;display:flex;flex-direction:column;gap:10px}
+  .pcard .title{font-weight:600;font-size:14.5px}
+  /* ---- Hero gate ---- */
+  .hero{display:flex;background:#1a160e;border:1px solid var(--accent-line);border-radius:14px;overflow:hidden;cursor:pointer}
+  .hero .bar{width:4px;background:var(--accent);flex:none}
+  .hero .ht{width:232px;flex:none}
+  .hero .hb{flex:1;padding:18px 20px;display:flex;flex-direction:column;gap:9px}
+  .hint{align-self:flex-start;display:inline-flex;gap:6px;align-items:center;padding:6px 10px;border-radius:7px;background:#16120a;border:1px solid var(--accent-line);color:var(--faint);font-size:11.5px}
+  .sectlabel{display:flex;align-items:center;gap:8px;margin:22px 0 12px;font-size:12px;font-weight:600;letter-spacing:.03em}
+  /* ---- Project detail ---- */
+  .crumb{font-size:12px;color:var(--faint);margin-bottom:14px;cursor:pointer}
+  .twocol{display:grid;grid-template-columns:1fr 340px;gap:18px;align-items:start}
+  .gauge{height:6px;border-radius:3px;background:var(--card2);overflow:hidden}
+  .gauge>i{display:block;height:100%;background:var(--done)}
+  .listrow{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:4px 0;font-size:12px}
+  .div{height:1px;background:var(--line);margin:2px 0}
+  .thumbstrip{display:flex;gap:8px}
+  .thumbstrip>div{flex:1;height:66px;border-radius:6px;position:relative}
+  .find{display:flex;gap:8px;font-size:12px;color:var(--mut);padding:3px 0}
+  .find .dot{margin-top:6px}
+  .empty{color:var(--faint);text-align:center;padding:80px 0}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="sample.js"></script>
+<script>
+/* ============================================================
+   Tiny DOM helper — h(tag, props, ...children)
+   ============================================================ */
+function h(tag, props, ...kids){
+  const e=document.createElement(tag);
+  if(props) for(const k in props){
+    if(k==='class')e.className=props[k];
+    else if(k==='style'&&typeof props[k]==='object')Object.assign(e.style,props[k]);
+    else if(k.startsWith('on')&&typeof props[k]==='function')e.addEventListener(k.slice(2),props[k]);
+    else if(props[k]!=null)e.setAttribute(k,props[k]);
+  }
+  for(const c of kids.flat()){ if(c==null||c===false)continue; e.append(c.nodeType?c:document.createTextNode(c)); }
+  return e;
+}
+const PIPE_HUE={'narrative-film':'#b48bd8','brand-narrative':'#E0A23C','cinematic':'#e2725b','animation':'#5ec8c8','animated-explainer':'#4DA3FF','talking-head':'#9AA0AB'};
+const STATE_COLOR={running:'var(--run)',done:'var(--done)',failed:'var(--fail)',needs:'var(--accent)',awaiting:'var(--accent)',pending:'var(--faint)'};
+
+/* ============================================================
+   Components — anything reused, or any loop output, is here.
+   ============================================================ */
+const Dot=(color,size=7)=>h('span',{class:'dot',style:{width:size+'px',height:size+'px',background:color}});
+
+const Pill=({label,bg,fg='var(--mut)',dot})=>
+  h('span',{class:'pill',style:{background:bg||'var(--card2)',color:fg}}, dot?Dot(dot,6):null, label);
+
+const StatusPill=(state)=>{
+  const m={running:['running','var(--run-bg)','var(--run)'],done:['done','var(--card2)','var(--done)'],
+    failed:['failed','var(--fail-bg)','var(--fail)'],awaiting:['awaiting you','var(--accent-bg)','var(--accent)']};
+  const [l,bg,fg]=m[state]||['—','var(--card2)','var(--mut)'];
+  return Pill({label:l,bg,fg,dot:fg});
+};
+
+const PipelinePill=(pipe)=>Pill({label:pipe,dot:PIPE_HUE[pipe]||'var(--faint)'});
+
+const Thumb=(grad,h_=148,extra=[])=>h('div',{class:'thumb',style:{height:h_+'px',
+  background:`linear-gradient(135deg, ${grad[0]}, ${grad[1]})`}}, ...extra);
+
+// MiniStepper — used on every project card (loop output -> component)
+const MiniStepper=(stages)=>h('div',{class:'stepper'},
+  stages.map(s=>h('span',{class:'seg '+(s.status==='done'?'done':s.status==='current'||s.status==='running'?'run':s.status==='needs'||s.status==='awaiting'?'needs':s.status==='failed'?'fail':'')})));
+
+// BigStepper — the full pipeline view on the project screen
+const BigStepper=(stages)=>{
+  const n=stages.length, cur=stages.findIndex(s=>['current','needs','awaiting','running','failed'].includes(s.status));
+  const wrap=h('div',{class:'bigstep'});
+  wrap.append(h('div',{class:'track'}));
+  if(cur>0)wrap.append(h('div',{class:'fill',style:{width:`calc((100% - 28px) * ${cur/(n-1)})`}}));
+  stages.forEach((s,i)=>{
+    const cls=s.status==='done'?'done':(s.status==='needs'||s.status==='awaiting')?'needs':s.status==='running'?'run':s.status==='failed'?'fail':'';
+    const node=h('div',{class:'node',style:{left:`calc(14px + (100% - 28px) * ${i/(n-1)})`}},
+      h('div',{class:'mk '+cls}), h('div',{class:'lab '+cls},s.name));
+    wrap.append(node);
+  });
+  return wrap;
+};
+
+const NavItem=(item,active,onNav)=>h('div',{class:'nav'+(active?' active':''),onclick:()=>onNav&&onNav(item.go)},
+  h('div',{class:'l'}, Dot(active?'var(--accent)':'var(--faint)',6), item.label),
+  item.badge?Pill({label:item.badge,bg:'var(--accent-bg)',fg:'var(--accent)'}):null);
+
+const Rail=(activeLabel,onNav)=>{
+  const items=[{label:'Projects',go:'#/'},{label:'Inbox',badge:'2',go:'#/inbox'},
+    {label:'Renders',go:'#/renders'},{label:'Capabilities',go:'#/capabilities'}];
+  return h('div',{class:'rail'},
+    h('div',{class:'brand'}, Dot('var(--accent)',10),
+      h('div',{}, h('b',{},'OpenMontage'), h('div',{class:'sub'},'observer'))),
+    h('div',{style:{height:'8px'}}),
+    items.map(it=>NavItem(it,it.label===activeLabel,onNav)),
+    h('div',{class:'grow'}),
+    h('div',{class:'foot'}, Dot('var(--done)',7), 'Live · polling'),
+    h('div',{class:'path'},'projects/ · pipelines/'));
+};
+
+const Panel=(title,...children)=>h('div',{class:'panel'}, title?h('h4',{},title):null, ...children);
+
+const FactRow=(k,v,mono)=>h('div',{class:'listrow'},
+  h('span',{class:'mut'},k), h('span',{class:mono?'mono':'',style:{fontWeight:500}},v));
+
+// ProjectCard — the dashboard grid's loop output -> component
+const ProjectCard=(p,onOpen)=>{
+  const running=p.status==='running';
+  return h('div',{class:'pcard',onclick:()=>onOpen(p.name)},
+    Thumb(p.thumb||['#1b2230','#0a0b0d'],148,[
+      h('span',{class:'pill ov',style:{left:'12px',top:'12px',background:'#11141a'}}, p.stageLabel||p.stage),
+      h('span',{class:'ov mono',style:{right:'12px',bottom:'12px',color:'#cfd2d8'}}, p.dur||''),
+      running?h('span',{class:'pill ov',style:{left:'12px',bottom:'12px',background:'var(--run-bg)',color:'var(--run)'}}, Dot('var(--run)',6),'rendering'):null,
+    ]),
+    h('div',{class:'body'},
+      h('div',{class:'title'},p.title),
+      h('div',{class:'row between'}, PipelinePill(p.pipeline), StatusPill(p.status)),
+      MiniStepper(p.stages),
+      h('div',{class:'row between'},
+        h('span',{class:'mono',style:{fontWeight:500}}, p.cost),
+        h('span',{class:'faint',style:{fontSize:'11px'}}, p.updated))));
+};
+
+// GateHero — the dashboard's loud "needs you" moment
+const GateHero=(p,onOpen)=>h('div',{class:'hero',onclick:()=>onOpen(p.name)},
+  h('div',{class:'bar'}),
+  (()=>{const t=Thumb(p.thumb||['#2a2236','#0c0a12']);t.className='ht thumb';t.style.height='auto';
+    t.append(h('span',{class:'pill ov',style:{left:'12px',top:'12px',background:'#120f08',color:'var(--accent)'}}, (p.gate.stage||'').toUpperCase()));return t;})(),
+  h('div',{class:'hb'},
+    h('div',{class:'row between'},
+      h('div',{class:'row'}, PipelinePill(p.pipeline), Pill({label:'awaiting you',bg:'var(--accent-bg)',fg:'var(--accent)',dot:'var(--accent)'})),
+      h('span',{class:'mono mut',style:{fontSize:'12px'}}, p.cost+' so far')),
+    h('div',{style:{fontSize:'21px',fontWeight:600}}, p.title),
+    h('div',{class:'accent',style:{fontWeight:500}}, p.gate.message),
+    p.gate.reviewer?h('div',{class:'mut',style:{fontSize:'12px'}}, p.gate.reviewer):null,
+    h('div',{class:'hint'}, 'Approve or give feedback in your agent session')));
+
+/* ============================================================
+   Screens — composed entirely from the components above.
+   ============================================================ */
+function DashboardScreen(state,onOpen,onNav){
+  const gate=state.projects.find(p=>p.status==='awaiting');
+  const groups={running:[],done:[],failed:[]};
+  state.projects.forEach(p=>{ if(p.status!=='awaiting')(groups[p.status]||(groups[p.status]=[])).push(p); });
+  const counts=`${state.projects.length} productions · ${gate?'1 needs you':'all clear'}`;
+  return h('div',{class:'app'}, Rail('Projects',onNav),
+    h('div',{class:'main'},
+      h('div',{class:'row between'},
+        h('div',{}, h('div',{style:{fontSize:'26px',fontWeight:600}},'Projects'),
+          h('div',{class:'mut',style:{fontSize:'12.5px',marginTop:'4px'}}, counts)),
+        h('div',{class:'row'}, h('span',{class:'pill'},'Search projects'),
+          h('span',{class:'pill',style:{background:'var(--card)',border:'1px solid var(--line)'}}, Dot('var(--done)',7),'Live'))),
+      gate?h('div',{class:'sectlabel accent'}, Dot('var(--accent)'),'NEEDS YOU ',h('span',{class:'faint',style:{fontWeight:400}},'· 1')):null,
+      gate?GateHero(gate,onOpen):null,
+      h('div',{class:'sectlabel mut'}, Dot('var(--run)'),'IN PROGRESS ',
+        h('span',{class:'faint',style:{fontWeight:400,marginLeft:'6px'}},
+          `· ${groups.running.length}    DONE · ${groups.done.length}    FAILED · ${(groups.failed||[]).length}`)),
+      h('div',{class:'grid'}, [...groups.running,...groups.done,...(groups.failed||[])].map(p=>ProjectCard(p,onOpen)))));
+}
+
+function ProjectScreen(state,name,onOpen,onNav){
+  const p=state.projects.find(x=>x.name===name);
+  if(!p)return h('div',{class:'app'},Rail('Projects',onNav),h('div',{class:'main'},h('div',{class:'empty'},'Project not found')));
+  const d=p.detail||{};
+  const gate=p.gate;
+  const left=h('div',{class:'stack',style:{gap:'18px'}},
+    gate?h('div',{class:'hero',style:{cursor:'default'}},
+      h('div',{class:'bar'}),
+      h('div',{class:'hb'},
+        h('div',{class:'row between'},
+          h('div',{class:'row'}, Dot('var(--accent)'), h('span',{class:'accent',style:{fontWeight:600,fontSize:'11px',letterSpacing:'.04em'}},'NEEDS YOU')),
+          h('span',{class:'mono faint',style:{fontSize:'10.5px'}}, `checkpoint_${gate.stage}.json · awaiting_human`)),
+        h('div',{style:{fontSize:'18px',fontWeight:600}}, gate.title||gate.message),
+        gate.meta?h('div',{class:'mut'},gate.meta):null,
+        d.shots?h('div',{class:'thumbstrip'}, d.shots.map((g,i)=>h('div',{style:{background:`linear-gradient(135deg,${g[0]},${g[1]})`}},
+          h('span',{class:'mono',style:{position:'absolute',left:'8px',bottom:'6px',fontSize:'9px',color:'#c9ccd2'}},'SH '+(i+1))))):null,
+        gate.findings?h('div',{class:'stack',style:{gap:'6px',marginTop:'4px'}},
+          h('div',{class:'hdr'}, `REVIEWER · ${gate.findings.length} suggestions`),
+          gate.findings.map(f=>h('div',{class:'find'}, Dot('var(--accent)',6), f))):null,
+        h('div',{class:'hint'}, 'Approve or request changes in your agent session'))):
+      h('div',{class:'panel'}, h('div',{class:'mut'},'No gate — '+(p.status==='done'?'production complete':'running'))),
+  );
+  const side=h('div',{class:'stack',style:{gap:'14px'}},
+    d.artifacts?Panel('ARTIFACTS', d.artifacts.map(a=>h('div',{class:'listrow'},
+      h('span',{class:'row'},
+        h('span',{class:a.status==='done'?'done':a.status==='needs'?'accent':'faint',style:{width:'12px'}},
+          a.status==='done'?'✓':a.status==='needs'?'◆':'○'),
+        h('span',{class:'mono',style:{color:a.status==='pending'?'var(--faint)':'var(--text)'}},a.name)),
+      h('span',{class:a.status==='needs'?'accent':'faint',style:{fontSize:'10.5px'}},
+        a.status==='needs'?'in review':a.status==='pending'?'pending':'')))):null,
+    d.facts?Panel('PRODUCTION', Object.entries(d.facts).map(([k,v])=>FactRow(k,v,/[0-9]/.test(v)&&/[x:·]/.test(v)))):null,
+    d.decision?Panel('DECISION LOG',
+      h('div',{class:'stack',style:{gap:'4px'}},
+        h('div',{class:'mono'},d.decision.id),
+        h('div',{class:'mut',style:{fontSize:'11.5px'}},d.decision.why),
+        h('div',{class:'mono faint',style:{fontSize:'10.5px'}},d.decision.options))):null);
+  return h('div',{class:'app'}, Rail('Projects',onNav),
+    h('div',{class:'main'},
+      h('div',{class:'crumb',onclick:()=>onNav('#/')}, '‹  Projects   /   '+p.title),
+      h('div',{class:'row between',style:{alignItems:'flex-start'}},
+        h('div',{}, h('div',{style:{fontSize:'26px',fontWeight:600}}, p.title),
+          h('div',{class:'row',style:{marginTop:'8px'}}, PipelinePill(p.pipeline), StatusPill(p.status),
+            d.format?h('span',{class:'faint',style:{fontSize:'12px'}}, d.format):null)),
+        d.budget?h('div',{class:'stack',style:{gap:'8px',width:'220px'}},
+          h('div',{class:'row between'}, h('span',{class:'mut',style:{fontSize:'11px'}},'Budget'),
+            h('span',{class:'mono'}, `${d.budget.used} / ${d.budget.total}`)),
+          h('div',{class:'gauge'}, h('i',{style:{width:d.budget.pct+'%'}}))):null),
+      h('div',{class:'panel',style:{marginTop:'18px'}},
+        h('div',{class:'row',style:{gap:'8px'}}, h('span',{class:'hdr'},'PIPELINE'),
+          h('span',{class:'mono mut',style:{fontSize:'11px'}}, d.stageCaption||'')),
+        BigStepper(p.stages)),
+      h('div',{class:'twocol',style:{marginTop:'18px'}}, left, side)));
+}
+
+/* ============================================================
+   Router + live polling (falls back to embedded sample)
+   ============================================================ */
+let STATE=window.SAMPLE_STATE||{projects:[]};
+function render(){
+  const root=document.getElementById('root'); root.innerHTML='';
+  const hash=location.hash||'#/';
+  const onOpen=(name)=>{location.hash='#/p/'+name};
+  const onNav=(go)=>{location.hash=go};
+  if(hash.startsWith('#/p/')) root.append(ProjectScreen(STATE,decodeURIComponent(hash.slice(4)),onOpen,onNav));
+  else if(hash==='#/inbox'||hash==='#/renders'||hash==='#/capabilities')
+    root.append(h('div',{class:'app'},Rail({'#/inbox':'Inbox','#/renders':'Renders','#/capabilities':'Capabilities'}[hash],onNav),
+      h('div',{class:'main'},h('div',{class:'empty'},hash.slice(2)+' — coming soon (same components)'))));
+  else root.append(DashboardScreen(STATE,onOpen,onNav));
+}
+async function poll(){
+  try{const r=await fetch('/api/state',{cache:'no-store'}); if(r.ok){const j=await r.json(); if(j&&j.projects&&j.projects.length){STATE=j; render();}}}catch(e){/* offline: keep sample */}
+}
+window.addEventListener('hashchange',render);
+render();
+poll(); setInterval(poll,4000);
+</script>
+</body>
+</html>

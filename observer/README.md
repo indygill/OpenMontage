@@ -62,12 +62,25 @@ Screens (`DashboardScreen`, `ProjectScreen`) are composed entirely from those.
 | GET | `/api/health` | `{ ok: true, readonly: true }` |
 | GET | `/` , `/sample.js` | the frontend |
 
-## Status
+## Screens (all wired)
 
-v1 wires the **Dashboard** and **Project overview** screens (the core observe +
-alert loop). The remaining Figma screens (Render/Player, Storyboard, Assets,
-Inbox, Cost & Decisions, Capabilities, Activity) reuse the same components and
-slot in as additional `*Screen` functions + routes.
+App-level routes plus a tabbed project workspace — every Figma screen is in:
+
+| Route | Screen |
+|---|---|
+| `#/` | Dashboard (needs-you hero + project grid) |
+| `#/inbox` | Inbox (cross-project alert queue) |
+| `#/renders` | Renders (finished-deliverable grid) |
+| `#/capabilities` | Capabilities (runtimes, provider ratios, quick setup) |
+| `#/p/<name>/overview` | Project — stepper + gate + sidebar |
+| `#/p/<name>/shots` | Storyboard (scene_plan shot grid) |
+| `#/p/<name>/assets` | Assets gallery (provenance badges, waveforms) |
+| `#/p/<name>/render` | Render/Player (player + variant tabs + outputs) |
+| `#/p/<name>/cost` | Cost & Decisions (gauge, line items, decision log) |
+| `#/p/<name>/activity` | Activity (live agent feed) |
+
+Tabs with no data yet fall back to an honest empty state (e.g. "No render yet —
+production is at assets."). A headless render harness exercises all routes.
 
 > Out of scope for v1 (by design): any **[Approve]** button. Approving from the
 > GUI would require the agent-glue described in

@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "openmontage/artifacts/locations",
+  "title": "Locations",
+  "description": "Reusable location entities for a narrative-film production. Typically derived from the script during breakdown, or provided by the user.",
+  "type": "object",
+  "required": ["version", "locations"],
+  "properties": {
+    "version": { "type": "string", "const": "1.0" },
+    "locations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "display_name", "description"],
+        "properties": {
+          "id": { "type": "string", "description": "Stable id referenced by scenes, sequences, and script sluglines" },
+          "display_name": { "type": "string" },
+          "description": { "type": "string" },
+          "time_of_day": { "type": "string" },
+          "weather": { "type": "string" },
+          "reference_assets": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Paths to provided reference images (relative to the project dir)"
+          },
+          "origin": {
+            "type": "string",
+            "enum": ["generated", "user_provided"],
+            "default": "generated"
+          },
+          "metadata": { "type": "object" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "metadata": { "type": "object" }
+  },
+  "additionalProperties": false
+}

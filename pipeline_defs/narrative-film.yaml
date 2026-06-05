@@ -1,0 +1,337 @@
+name: narrative-film
+version: "1.0"
+description: >
+  Narrative film/TV pipeline that models a production the way a director thinks:
+  concept (logline/synopsis/world) -> principal characters -> story -> screenplay
+  -> breakdown (locations, supporting cast, sequences derived from the script) ->
+  shot list -> assets -> edit -> compose -> publish. The script is the spine and
+  precedes the shot list; principal cast and world are established early and
+  identity-locked for generative consistency. Supports ingesting existing material
+  at any altitude (treatment, script, storyboards, footage, rough cut) — deriving
+  upstream artifacts by extraction and generating downstream.
+category: cinematic
+stability: beta
+default_checkpoint_policy: guided
+
+reference_input:
+  supported: true
+  analysis_depth: deep
+  analysis_tools:
+    - video_analyzer
+    - transcript_fetcher
+    - video_downloader
+    - scene_detect
+    - frame_sampler
+
+orchestration:
+  mode: executive-producer
+  skill: pipelines/narrative-film/executive-producer
+  budget_default_usd: 3.00
+  max_revisions_per_stage: 3
+  max_send_backs: 3
+  max_wall_time_minutes: 20
+
+extensions:
+  custom_scripts: true
+  custom_playbooks: true
+  custom_skills: true
+  custom_tools: false
+
+required_skills:
+  - pipelines/narrative-film/executive-producer
+  - pipelines/narrative-film/concept-director
+  - pipelines/narrative-film/proposal-director
+  - pipelines/narrative-film/character-director
+  - pipelines/narrative-film/story-director
+  - pipelines/narrative-film/script-director
+  - pipelines/narrative-film/breakdown-director
+  - pipelines/narrative-film/scene-director
+  - pipelines/narrative-film/asset-director
+  - pipelines/narrative-film/edit-director
+  - pipelines/narrative-film/compose-director
+  - pipelines/narrative-film/publish-director
+  - meta/reviewer
+  - meta/checkpoint-protocol
+  - meta/animation-runtime-selector
+
+compatible_playbooks:
+  recommended:
+    - clean-professional
+  also_works:
+    - flat-motion-graphics
+    - minimalist-diagram
+    - anime-ghibli
+  custom_allowed: true
+
+stages:
+  - name: concept
+    skill: pipelines/narrative-film/concept-director
+    optional_artifacts_in:
+      - source_media_review
+    produces:
+      - story_bible
+    tools_available:
+      - web_search
+    checkpoint_required: true
+    human_approval_default: true
+    review_focus:
+      - Logline is a single, specific sentence with a clear dramatic hook
+      - Synopsis conveys the full arc, not just a premise
+      - World has concrete setting, era, and rules the story can obey
+      - Tone and format are explicit and internally consistent
+    success_criteria:
+      - Schema-valid story_bible artifact
+      - Logline, synopsis, tone, format, and world are all present
+
+  - name: proposal
+    skill: pipelines/narrative-film/proposal-director
+    required_artifacts_in:
+      - story_bible
+    optional_artifacts_in:
+      - source_media_review
+      - video_analysis_brief
+    produces:
+      - proposal_packet
+      - decision_log
+    tools_available: []
+    checkpoint_required: true
+    human_approval_default: true
+    review_focus:
+      - Production plan matches the story_bible's tone, format, and world
+      - Both composition runtimes were presented and render_runtime is locked
+      - Music plan is resolved (library track, generation, or none)
+      - Cost estimate includes a per-item breakdown
+      - "Ingest-at-altitude: any user-provided material is acknowledged with its entry stage"
+    success_criteria:
+      - Schema-valid proposal_packet artifact
+      - render_runtime is locked and a render_runtime_selection decision is logged
+      - Music plan and cost estimate are present
+
+  - name: characters
+    skill: pipelines/narrative-film/character-director
+    required_artifacts_in:
+      - story_bible
+    optional_artifacts_in:
+      - source_media_review
+    produces:
+      - cast
+    tools_available:
+      - image_selector
+      - source_media_review
+    checkpoint_required: true
+    human_approval_default: true
+    review_focus:
+      - Principal characters have distinct roles and silhouettes
+      - Each principal has identity anchors locked for cross-shot consistency
+      - identity_method is realistic for available generation tools
+      - Provided reference images are recorded with origin=user_provided
+    success_criteria:
+      - Schema-valid cast artifact
+      - Every principal has tier=principal and consistency anchors or references
+
+  - name: story
+    skill: pipelines/narrative-film/story-director
+    required_artifacts_in:
+      - story_bible
+    optional_artifacts_in:
+      - cast
+    produces:
+      - story
+    tools_available: []
+    checkpoint_required: true
+    human_approval_default: true
+    review_focus:
+      - Act/beat structure escalates cleanly toward a clear climax
+      - Beats serve the logline and theme, not decoration
+      - Structure choice matches the format and duration
+    success_criteria:
+      - Schema-valid story artifact
+      - At least one act with ordered, functional beats
+
+  - name: script
+    skill: pipelines/narrative-film/script-director
+    required_artifacts_in:
+      - story
+    optional_artifacts_in:
+      - cast
+      - story_bible
+    produces:
+      - script
+    tools_available: []
+    checkpoint_required: true
+    human_approval_default: true
+    review_focus:
+      - Screenplay scenes map cleanly to story beats
+      - Sluglines are concrete (location + time) and dialogue is purposeful
+      - form=screenplay is set and scenes[] is populated for narrative work
+      - Provided/locked scripts are validated and never silently rewritten
+    success_criteria:
+      - Schema-valid script artifact with form=screenplay
+      - Every script scene references resolvable cast and location intent
+
+  - name: breakdown
+    skill: pipelines/narrative-film/breakdown-director
+    required_artifacts_in:
+      - script
+    optional_artifacts_in:
+      - cast
+      - story
+    produces:
+      - locations
+      - sequence_plan
+      - cast
+    tools_available:
+      - source_media_review
+    checkpoint_required: true
+    human_approval_default: true
+    review_focus:
+      - Every location referenced by the script exists in the locations artifact
+      - Supporting/minor characters from the script are added to cast (tier=breakdown)
+      - Sequences group script scenes coherently and reference valid acts
+      - When the script was user-provided, the breakdown was derived FROM it (reverse-derivation), not invented
+    success_criteria:
+      - Schema-valid locations and sequence_plan artifacts
+      - cast is updated to cover all speaking parts in the script
+
+  - name: scene_plan
+    skill: pipelines/narrative-film/scene-director
+    required_artifacts_in:
+      - script
+      - sequence_plan
+    optional_artifacts_in:
+      - cast
+      - locations
+    produces:
+      - scene_plan
+    optional_tools:
+      - frame_sampler
+      - scene_detect
+    tools_available:
+      - frame_sampler
+      - scene_detect
+      - source_media_review
+    checkpoint_required: true
+    human_approval_default: true
+    review_focus:
+      - Each script scene fans out into deliberate shots with full shot_language
+      - Every shot resolves cast ids against cast and location_id against locations
+      - sequence_id links every shot back to a valid sequence
+      - Hero/reveal moments are explicit
+    success_criteria:
+      - Schema-valid scene_plan artifact
+      - Every shot carries sequence_id, location_id, and cast references
+
+  - name: assets
+    skill: pipelines/narrative-film/asset-director
+    required_artifacts_in:
+      - scene_plan
+    optional_artifacts_in:
+      - cast
+      - locations
+      - story_bible
+    produces:
+      - asset_manifest
+    optional_tools:
+      - subtitle_gen
+      - audio_enhance
+      - image_selector
+      - video_selector
+      - tts_selector
+      - pixabay_music
+      - freesound_music
+      - music_gen
+    tools_available:
+      - subtitle_gen
+      - audio_enhance
+      - image_selector
+      - video_selector
+      - tts_selector
+      - pixabay_music
+      - freesound_music
+      - music_gen
+    checkpoint_required: true
+    human_approval_default: false
+    review_focus:
+      - Character identity is consistent across all shots a character appears in
+      - Provided assets are reused and recorded with correct provenance
+      - Motion-required beats use real clips, not still-image substitutes
+      - Music plan matches the story tone
+    success_criteria:
+      - Schema-valid asset_manifest artifact
+      - All referenced asset files exist on disk
+
+  - name: edit
+    skill: pipelines/narrative-film/edit-director
+    required_artifacts_in:
+      - scene_plan
+      - asset_manifest
+    optional_artifacts_in:
+      - script
+    produces:
+      - edit_decisions
+    tools_available: []
+    checkpoint_required: true
+    human_approval_default: false
+    review_focus:
+      - Cut preserves the dramatic pacing of the sequences
+      - Audio and title-card timing reinforce the story
+      - render_runtime is carried unchanged from the proposal/locked choice
+    success_criteria:
+      - Schema-valid edit_decisions artifact
+      - Edit decisions cover the full planned runtime
+
+  - name: compose
+    skill: pipelines/narrative-film/compose-director
+    required_artifacts_in:
+      - edit_decisions
+      - asset_manifest
+    optional_artifacts_in:
+      - scene_plan
+    produces:
+      - render_report
+      - final_review
+    required_tools:
+      - video_compose
+      - audio_mixer
+    optional_tools:
+      - video_stitch
+      - video_trimmer
+      - color_grade
+      - audio_enhance
+    tools_available:
+      - video_compose
+      - hyperframes_compose
+      - audio_mixer
+      - video_stitch
+      - video_trimmer
+      - color_grade
+      - audio_enhance
+    checkpoint_required: true
+    human_approval_default: false
+    review_focus:
+      - Output mood matches the intended tone and grade
+      - Motion-required delivery was preserved without silent fallback
+      - "render_runtime in edit_decisions matches the locked choice — silent swap is a CRITICAL governance violation"
+    success_criteria:
+      - Schema-valid render_report artifact
+      - Output file exists and passes ffprobe validation
+
+  - name: publish
+    skill: pipelines/narrative-film/publish-director
+    required_artifacts_in:
+      - render_report
+      - final_review
+    optional_artifacts_in:
+      - story_bible
+      - script
+    produces:
+      - publish_log
+    tools_available: []
+    checkpoint_required: true
+    human_approval_default: true
+    review_focus:
+      - Hero export and derivatives are clearly labeled
+      - Metadata matches the tone and distribution intent
+    success_criteria:
+      - Schema-valid publish_log artifact
+      - Export package contains video and metadata outputs

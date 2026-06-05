@@ -15,6 +15,13 @@
         "required": ["id", "type", "description", "start_seconds", "end_seconds"],
         "properties": {
           "id": { "type": "string" },
+          "sequence_id": { "type": "string", "description": "Owning sequence id (from sequence_plan); narrative-film pipeline" },
+          "location_id": { "type": "string", "description": "Reference into the locations artifact; narrative-film pipeline" },
+          "cast": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Character ids (from cast) present in this shot; narrative-film pipeline"
+          },
           "type": {
             "type": "string",
             "enum": ["talking_head", "broll", "animation", "character_scene", "diagram", "text_card", "transition", "generated", "screen_recording"]

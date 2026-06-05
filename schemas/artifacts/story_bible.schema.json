@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "openmontage/artifacts/story_bible",
+  "title": "Story Bible",
+  "description": "Top-level creative bible for a narrative-film production: logline, synopsis, themes, and world. Replaces the marketing-shaped brief for the narrative-film pipeline.",
+  "type": "object",
+  "required": ["version", "title", "logline", "synopsis", "tone", "format", "world"],
+  "properties": {
+    "version": { "type": "string", "const": "1.0" },
+    "title": { "type": "string", "minLength": 1 },
+    "logline": { "type": "string", "minLength": 1, "description": "One-sentence premise" },
+    "synopsis": { "type": "string", "minLength": 1, "description": "1-3 paragraph prose summary" },
+    "themes": { "type": "array", "items": { "type": "string" } },
+    "tone": { "type": "string" },
+    "format": {
+      "type": "object",
+      "required": ["kind", "target_duration_seconds"],
+      "properties": {
+        "kind": { "type": "string", "description": "e.g. short_film, feature, episode, teaser" },
+        "target_duration_seconds": { "type": "number", "minimum": 1 },
+        "aspect_ratio": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "world": {
+      "type": "object",
+      "required": ["setting"],
+      "properties": {
+        "setting": { "type": "string" },
+        "era": { "type": "string" },
+        "rules": { "type": "array", "items": { "type": "string" }, "description": "World rules / constraints the story obeys" },
+        "visual_bible": { "type": "string", "description": "Prose description of the visual world (palette, light, texture)" },
+        "style_playbook": { "type": "string", "description": "Name of the active style playbook (styles/*.yaml)" }
+      },
+      "additionalProperties": false
+    },
+    "reference_material": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Reference URLs or local paths that informed the bible"
+    },
+    "origin": {
+      "type": "string",
+      "enum": ["generated", "user_provided"],
+      "default": "generated",
+      "description": "Provenance: was this authored by the agent or supplied by the user (ingest-at-altitude)"
+    },
+    "metadata": { "type": "object" }
+  },
+  "additionalProperties": false
+}

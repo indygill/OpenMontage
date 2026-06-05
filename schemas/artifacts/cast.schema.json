@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "openmontage/artifacts/cast",
+  "title": "Cast",
+  "description": "Reusable character entities for a narrative-film production. Principals are established early (locked for generative consistency); supporting/minor characters are derived from the script during breakdown.",
+  "type": "object",
+  "required": ["version", "characters"],
+  "properties": {
+    "version": { "type": "string", "const": "1.0" },
+    "characters": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "display_name", "role", "tier"],
+        "properties": {
+          "id": { "type": "string", "description": "Stable id referenced by scenes, sequences, and script" },
+          "display_name": { "type": "string" },
+          "role": { "type": "string", "enum": ["protagonist", "antagonist", "supporting", "minor", "extra"] },
+          "tier": {
+            "type": "string",
+            "enum": ["principal", "breakdown"],
+            "description": "principal = established early and identity-locked; breakdown = added from the script"
+          },
+          "description": { "type": "string" },
+          "identity_method": {
+            "type": "string",
+            "enum": ["prompt", "reference_image", "lora", "rig"],
+            "default": "prompt",
+            "description": "How visual identity is held. v1 ships prompt + reference_image; lora/rig are forward hooks."
+          },
+          "reference_assets": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Paths to provided/locked reference images (relative to the project dir)"
+          },
+          "wardrobe": { "type": "array", "items": { "type": "string" } },
+          "consistency_anchors": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Verbatim identity descriptors to repeat across shots for consistency"
+          },
+          "constraints": { "type": "array", "items": { "type": "string" } },
+          "origin": {
+            "type": "string",
+            "enum": ["generated", "user_provided"],
+            "default": "generated"
+          },
+          "metadata": { "type": "object" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "metadata": { "type": "object" }
+  },
+  "additionalProperties": false
+}

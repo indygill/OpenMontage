@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "openmontage/artifacts/sequence_plan",
+  "title": "Sequence Plan",
+  "description": "Ordered sequences (groups of scenes) for a narrative-film production. The grouping layer between the script and the shot-level scene_plan; typically derived from the script during breakdown.",
+  "type": "object",
+  "required": ["version", "sequences"],
+  "properties": {
+    "version": { "type": "string", "const": "1.0" },
+    "sequences": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "order", "label"],
+        "properties": {
+          "id": { "type": "string" },
+          "order": { "type": "integer", "minimum": 1 },
+          "label": { "type": "string" },
+          "act_id": { "type": "string", "description": "References an act in the story artifact" },
+          "summary": { "type": "string" },
+          "primary_location_id": { "type": "string", "description": "References a location in the locations artifact" },
+          "cast_ids": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Character ids (from cast) appearing in this sequence"
+          },
+          "scene_ids": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Scene/shot ids (from scene_plan) belonging to this sequence; populated once the shot list is built"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "origin": {
+      "type": "string",
+      "enum": ["generated", "user_provided"],
+      "default": "generated"
+    },
+    "metadata": { "type": "object" }
+  },
+  "additionalProperties": false
+}

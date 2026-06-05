@@ -281,6 +281,7 @@ Follows the cinematic manifest structure (orchestration block, `required_skills`
 | Stage | Produces | Gate (`human_approval_default`) | Key inputs |
 |---|---|---|---|
 | `concept` | `story_bible` | **true** | (idea) |
+| `proposal` | `proposal_packet`, `decision_log` | **true** | story_bible |
 | `characters` | `cast` (principals + identity) | **true** | story_bible |
 | `story` | `story` (acts/beats) | **true** | story_bible, cast |
 | `script` | `script` (screenplay) | **true** | story, cast |
@@ -292,7 +293,12 @@ Follows the cinematic manifest structure (orchestration block, `required_skills`
 | `publish` | `publish_log` | true | render_report |
 
 Notes:
-- Six creative gates up front is intentional — this pipeline is for users who
+- A **`proposal` stage** sits between `concept` and `characters`: it locks the
+  production plan and — per OpenMontage's governance contract — **presents both
+  composition runtimes and locks `render_runtime`** there (enforced by
+  `tests/contracts/test_runtime_presentation_contract.py`). Every pipeline that
+  reaches compose must carry this gate.
+- Seven creative gates up front is intentional — this pipeline is for users who
   *want* to shape every layer. `default_checkpoint_policy: guided`. A future
   "fast" policy could auto-advance early gates.
 - `reference_input.supported: true` (reuse the reference-video analyst path).
@@ -406,21 +412,32 @@ HyperFrames / FFmpeg).
    and image-folder → `cast`/`locations` refs first; EDL / timeline-XML cut
    ingestion in a later phase.
 
-## 10. Suggested implementation phases
+## 10. Implementation phases
 
-- **Phase 1 — schemas + manifest:** 5 schemas, the `scene_plan` + `script`
-  extensions, `narrative-film.yaml`, contract tests. Pipeline is discoverable and
-  validates.
-- **Phase 2 — director skills:** author the stage skills; wire reference +
-  source-media paths.
-- **Phase 3 — ingest at altitude:** provided-artifact convention, the first
-  ingestion adapters (§9.6), and reverse-derivation skills (script → breakdown).
-- **Phase 4 — dogfood:** run a short film end-to-end; tune gates; document in
-  `README.md` / `PROJECT_CONTEXT.md` / `AGENT_GUIDE.md` pipeline tables.
+- **Phase 1 — schemas + manifest — DONE.** 5 schemas (`story_bible`, `cast`,
+  `locations`, `story`, `sequence_plan`), the `scene_plan` + dual-shape `script`
+  extensions, `pipeline_defs/narrative-film.yaml` (with a `proposal` stage), and
+  `tests/contracts/test_narrative_film_pipeline.py`. Pipeline is discoverable and
+  validates; the script change is backward-compatible (legacy narration scripts
+  still validate).
+- **Phase 2 — director skills — DONE.** All 12 stage skills under
+  `skills/pipelines/narrative-film/`, including the runtime-selection contract in
+  the proposal- and compose-directors (passes
+  `test_runtime_presentation_contract.py`).
+- **Phase 3 — ingest at altitude — TODO.** Provided-artifact convention, the
+  first ingestion adapters (§9.6: `.fdx`/PDF → script, image-folder → refs), and
+  reverse-derivation tooling (script → breakdown). The director skills already
+  describe the *behavior*; this phase adds the *parsers/tooling*.
+- **Phase 4 — dogfood — TODO.** Run a short film end-to-end; tune gates; add
+  `narrative-film` to the pipeline tables in `README.md` / `PROJECT_CONTEXT.md` /
+  `AGENT_GUIDE.md`.
+
+> Build note: a pre-existing contract failure exists for the unrelated
+> `character-animation` pipeline (its proposal-director names `render_runtime`
+> but not `hyperframes`); it is red on a clean tree and is out of scope here.
 
 ---
 
-*Design document only — no schemas, manifests, or skills created yet. §9.2
-(dual-shape script) and §9.6 (adapter priority) are resolved. Remaining open:
-§9.4 (per-sequence renders, deferred) and §9.5 (pipeline name). Phase 1 is ready
-to begin.*
+*Phases 1–2 implemented and tested. §9.2 (dual-shape script) and §9.6 (adapter
+priority) resolved. Remaining open: §9.4 (per-sequence renders, deferred) and
+§9.5 (pipeline name — implemented as `narrative-film`).*

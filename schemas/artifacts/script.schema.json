@@ -2,12 +2,28 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "openmontage/artifacts/script",
   "title": "Production Script",
-  "description": "Timestamped script produced by the Script Writer agent.",
+  "description": "Production script. Supports two shapes selected by `form`: timecoded narration (`sections[]`, the default/legacy shape) and scene-based screenplay (`scenes[]`). When `form` is absent it is treated as narration for backward compatibility.",
   "type": "object",
-  "required": ["version", "title", "total_duration_seconds", "sections"],
+  "required": ["version", "title"],
+  "allOf": [
+    {
+      "if": {
+        "required": ["form"],
+        "properties": { "form": { "const": "screenplay" } }
+      },
+      "then": { "required": ["scenes"] },
+      "else": { "required": ["sections", "total_duration_seconds"] }
+    }
+  ],
   "properties": {
     "version": { "type": "string", "const": "1.0" },
     "title": { "type": "string" },
+    "form": {
+      "type": "string",
+      "enum": ["narration", "screenplay"],
+      "default": "narration",
+      "description": "Authoritative shape. Absent = narration (legacy)."
+    },
     "total_duration_seconds": { "type": "number", "minimum": 1 },
     "sections": {
       "type": "array",
@@ -52,6 +68,47 @@
         "additionalProperties": false
       },
       "minItems": 1
+    },
+    "scenes": {
+      "type": "array",
+      "description": "Screenplay shape: scene-based, no timecode. Each scene fans out into multiple shots in scene_plan.",
+      "items": {
+        "type": "object",
+        "required": ["id", "slugline", "action"],
+        "properties": {
+          "id": { "type": "string", "description": "Stable scene id; referenced by sequence_plan and scene_plan" },
+          "sequence_id": { "type": "string", "description": "Owning sequence (from sequence_plan)" },
+          "slugline": { "type": "string", "description": "e.g. EXT. ISLAND JETTY - DAY" },
+          "location_id": { "type": "string", "description": "Resolves against the locations artifact" },
+          "action": { "type": "string", "description": "Scene action / description" },
+          "cast": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Character ids (from cast) present in this scene"
+          },
+          "dialogue": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["character_id", "line"],
+              "properties": {
+                "character_id": { "type": "string" },
+                "line": { "type": "string" },
+                "parenthetical": { "type": "string" }
+              },
+              "additionalProperties": false
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "minItems": 1
+    },
+    "origin": {
+      "type": "string",
+      "enum": ["generated", "user_provided"],
+      "default": "generated",
+      "description": "Provenance: agent-authored or user-supplied (ingest-at-altitude, e.g. an imported .fdx)"
     },
     "metadata": { "type": "object" }
   },

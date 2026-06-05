@@ -1,11 +1,12 @@
 # Design Proposal: `narrative-film` Pipeline
 
-> Status: **Draft for review** | Author: agent-assisted design | Date: 2026-06-05
+> Status: **Draft for review (rev 2)** | Author: agent-assisted design | Date: 2026-06-05
 >
 > Purpose: add a film-production hierarchy to OpenMontage so a user can drive a
 > project the way a director thinks — *project → logline & synopsis → world →
-> characters & locations → story → sequence → scene* — instead of the current
-> single, linear, time-coded deliverable model.
+> characters → story → script → breakdown → sequence → shot* — instead of the
+> current single, linear, time-coded deliverable model. The pipeline must also
+> let a user **enter or override at any altitude** with existing material.
 
 ---
 
@@ -13,73 +14,96 @@
 
 OpenMontage today models a production as **one linear, time-coded deliverable**:
 a flat `scene_plan.scenes[]` list on a single timeline, fed by a marketing-shaped
-`brief` (`hook`, `key_points`, `cta`, `target_platform`). That is excellent for
+`brief` (`hook`, `key_points`, `cta`, `target_platform`). Excellent for
 explainers, trailers, and short-form social cuts.
 
 It does **not** model the persistent, reusable, nested structure of a narrative
 film project:
 
 - a **world** (setting, era, rules, tone) that all scenes inherit,
-- **characters** and **locations** as first-class, reusable entities referenced
-  by ID across many scenes,
-- a **Story → Sequence → Scene** tree rather than a flat scene list.
+- **characters** and **locations** as first-class, reusable entities,
+- a **Story → Script → Sequence → Shot** chain rather than a flat scene list,
+- the ability to **bring existing material in at any stage**, not just footage.
 
-This proposal adds that structure **as a new pipeline**, the OpenMontage-native
-extension point — not as a rewrite of the existing pipelines. Everything reuses
-the current machinery: checkpoints, approval gates, the reviewer meta-skill, the
-tool registry/selectors, the cost tracker, and the already-rich `scene_plan`
-shot vocabulary.
+This adds that structure **as a new pipeline**, the OpenMontage-native extension
+point — reusing checkpoints, approval gates, the reviewer meta-skill, the tool
+registry/selectors, the cost tracker, and the already-rich `scene_plan` shot
+vocabulary.
 
-## 2. Target user experience
+## 2. Pipeline order — grounded in professional practice
+
+The order follows how real productions sequence work. Two principles drive it:
+
+1. **The script is the spine.** A storyboard / shot list is a *visual
+   interpretation of an already-written script*. So `script` precedes
+   `scene_plan`. (OpenMontage's existing pipelines already do `script →
+   scene_plan`; rev 1 of this doc wrongly inverted it.)
+2. **Cast and locations are a *breakdown of the script*.** In live-action the
+   1st AD extracts every speaking part and location *from the finished script*.
+   But this is a **generative** pipeline, where character identity (reference
+   images, consistency anchors) must be **locked before generation** — so we
+   establish **principal cast + world** early (visual development), then run a
+   fuller **breakdown** (locations, supporting cast, sequences) *after* the
+   script. This is exactly how animation studios actually work ("Option B").
 
 ```
 New project: "The Lighthouse Keeper"
-  ├─ Logline & synopsis      → one sentence + a paragraph, themes, tone
-  ├─ World                   → setting, era, rules, visual + narrative bible
-  ├─ Characters & Locations  → reusable cast + place entities (with refs)
-  ├─ Story                   → act/beat structure across the whole piece
-  ├─ Sequences               → ordered groups of scenes (a "chapter" of story)
-  └─ Scenes                  → individual shots, each referencing cast + location
+  ├─ Concept        → logline, synopsis, world bible
+  ├─ Characters     → principal cast + visual identity (locked for consistency)
+  ├─ Story          → act / beat structure (the spine's outline)
+  ├─ Script         → screenplay (THE spine — scenes, action, dialogue)
+  ├─ Breakdown      → locations + supporting cast + sequences, derived FROM script
+  ├─ Shot list      → individual shots per scene (the "scene_plan" artifact)
+  └─ Produce → Edit → Finish → Publish
 ```
 
-The user tunes at **every** gate (approve / revise / abort), exactly like the
-existing creative stages. Existing assets (footage, stills, music) inject through
-the same `source_media_review` + `required_assets.source: "provided"` path the
-footage-led pipelines already use.
+### Terminology note (decide deliberately)
+
+In a screenplay a **scene** = one location/time unit (one slugline). OpenMontage's
+`scene_plan` is really a **shot list / storyboard** — it breaks each script scene
+into individual *shots* with camera/lens/lighting. The precise chain is:
+
+```
+story → script(scenes) → sequences(groups of scenes) → shots(scene_plan items)
+```
+
+What the artifact calls a "scene" is closer to a **shot / board**. Director skills
+should use "shot" in user-facing language to avoid confusing a real director.
 
 ## 3. Mapping: desired hierarchy → OpenMontage artifacts
 
 | User-facing layer | Artifact | New / existing | Notes |
 |---|---|---|---|
 | New Project | `projects/<name>/` workspace | **existing** | No change. |
-| Logline & synopsis | `story_bible` (§4.1) | **new** | Replaces marketing-shaped `brief` for this pipeline. |
-| World | `story_bible.world` (§4.1) | **new** | Narrative world; pairs with a visual **style playbook**. |
-| Characters | `cast` (§4.2) | **new** | Generalizes the existing `character_design` schema (which is rigged-cartoon-specific). |
-| Locations | `locations` (§4.3) | **new** | No equivalent exists today. |
-| Story | `story` (§4.4) | **new** | Act/beat structure; distinct from the timecoded `script`. |
-| Sequence | `sequence_plan` (§4.5) | **new** | Grouping layer between story and scenes. |
-| Scene | `scene_plan` (§4.6) | **extend existing** | Add `cast`, `location_id`, `sequence_id`. Already has `character_actions[].character_id` and `required_assets[].source:"provided"`. |
-| Assets / Edit / Compose | `asset_manifest` / `edit_decisions` / `render_report` | **existing** | Unchanged; reused as-is. |
+| Logline & synopsis | `story_bible` (§4.1) | **new** | Replaces marketing `brief` for this pipeline. |
+| World | `story_bible.world` (§4.1) | **new** | Narrative world; pairs with a visual style playbook. |
+| Characters | `cast` (§4.2) | **new** | Generalizes the rigged-cartoon `character_design` schema. |
+| Story | `story` (§4.4) | **new** | Act/beat outline; precedes the screenplay. |
+| Script | `script` (existing, screenplay variant) | **extend** | Screenplay scenes, not just timecoded narration (§9.2). |
+| Locations | `locations` (§4.3) | **new** | Derived in breakdown. |
+| Sequence | `sequence_plan` (§4.5) | **new** | Grouping layer, derived from script. |
+| Shot | `scene_plan` (§4.6) | **extend** | Add `cast`, `location_id`, `sequence_id`. |
+| Assets / Edit / Compose / Publish | `asset_manifest` / `edit_decisions` / `render_report` / `publish_log` | **existing** | Reused as-is. |
 
-**Key reuse wins already present in the codebase:**
+**Reuse wins already in the codebase:**
 
 - `scene_plan.scenes[].character_actions[].character_id` already exists → cast
-  references are a natural extension, not a new concept.
+  references are a natural extension.
 - `scene_plan.scenes[].required_assets[].source` already enumerates
   `["generate", "source", "provided", "record"]` → user-supplied assets are
   already a modeled provenance.
 - `character_design.schema.json` is a working precedent for an entity-array
-  artifact; `cast` follows the same shape with film-oriented fields.
+  artifact; `cast` follows the same shape.
 - `lib/source_media_review.py` + the reviewer's CRITICAL gate already enforce
-  "inspect user media before planning" — no new enforcement logic needed.
+  "inspect user media before planning."
 
 ## 4. New & extended artifacts
 
-> All schemas live in `schemas/artifacts/` and follow the existing conventions:
+> All schemas live in `schemas/artifacts/`, following existing conventions:
 > `version: "1.0"` const, `additionalProperties: false`, a trailing `metadata`
-> object, and entity arrays keyed by a string `id`.
+> object, entity arrays keyed by a string `id`.
 
-### 4.1 `story_bible` (new) — replaces `brief` for this pipeline
+### 4.1 `story_bible` (new)
 
 ```jsonc
 {
@@ -95,19 +119,16 @@ footage-led pipelines already use.
     "era": "1890s",
     "rules": ["no electricity", "the light must never go out"],
     "visual_bible": "cold blues, oil-lamp warmth, heavy grain",
-    "style_playbook": "clean-professional"          // links to styles/*.yaml
+    "style_playbook": "clean-professional"
   },
-  "reference_material": ["https://..."],             // reuses existing convention
+  "reference_material": ["https://..."],
   "metadata": {}
 }
 ```
 
 Required: `version, title, logline, synopsis, tone, format, world`.
 
-### 4.2 `cast` (new) — reusable characters
-
-Generalizes `character_design` so it covers live-action / generated / rigged
-characters, not just SVG rigs.
+### 4.2 `cast` (new)
 
 ```jsonc
 {
@@ -116,10 +137,11 @@ characters, not just SVG rigs.
     {
       "id": "thomas",
       "display_name": "Thomas Wake",
-      "role": "protagonist",
+      "role": "protagonist",          // protagonist | supporting | minor | extra
+      "tier": "principal",            // principal (early) | breakdown (from script)
       "description": "weathered keeper, 60s, salt-grey beard",
-      "identity_method": "prompt",        // prompt | reference_image | lora | rig
-      "reference_assets": ["assets/cast/thomas/ref01.png"],   // optional, provided
+      "identity_method": "prompt",    // prompt | reference_image | lora | rig
+      "reference_assets": ["assets/cast/thomas/ref01.png"],
       "wardrobe": ["oilskin coat", "wool cap"],
       "consistency_anchors": ["deep-set eyes", "scar over left brow"],
       "constraints": ["always lit warm"],
@@ -130,9 +152,10 @@ characters, not just SVG rigs.
 }
 ```
 
-`identity_method` is deliberately open: `prompt` and `reference_image` work with
-today's image/video generators; `lora` / `rig` are forward-looking hooks (the
-latter bridges to the existing character-animation pipeline).
+`tier` distinguishes principals (locked early for generative consistency) from
+characters added during the script breakdown. `identity_method` v1 ships `prompt`
++ `reference_image`; `lora`/`rig` are forward hooks (the latter bridges to the
+character-animation pipeline).
 
 ### 4.3 `locations` (new)
 
@@ -146,7 +169,7 @@ latter bridges to the existing character-animation pipeline).
       "description": "cramped iron gallery around the rotating lens",
       "time_of_day": "night",
       "weather": "storm",
-      "reference_assets": ["assets/locations/lamp_room/ref01.jpg"],  // optional, provided
+      "reference_assets": ["assets/locations/lamp_room/ref01.jpg"],
       "metadata": {}
     }
   ],
@@ -174,11 +197,7 @@ latter bridges to the existing character-animation pipeline).
 }
 ```
 
-Distinct from `script`: `story` is the *what-happens* spine; the timecoded
-`script` (narration/dialogue/title-cards) is generated **from** it later, reusing
-the existing `script` artifact unchanged.
-
-### 4.5 `sequence_plan` (new) — the grouping layer
+### 4.5 `sequence_plan` (new) — grouping layer, derived from the script
 
 ```jsonc
 {
@@ -192,128 +211,177 @@ the existing `script` artifact unchanged.
       "summary": "Thomas reaches the island and climbs to the lamp.",
       "primary_location_id": "lamp_room",
       "cast_ids": ["thomas"],
-      "scene_ids": ["sc_001", "sc_002"]      // populated when scene_plan is built
+      "scene_ids": ["sc_001", "sc_002"]
     }
   ],
   "metadata": {}
 }
 ```
 
-### 4.6 `scene_plan` (extend existing)
+### 4.6 `scene_plan` (extend existing) — the shot list
 
-Add three optional fields to each item in `scene_plan.scenes[]` — **additive and
-backward-compatible** (existing pipelines ignore them):
+Add three optional, **backward-compatible** fields to each `scene_plan.scenes[]`
+item (existing pipelines ignore them):
 
 ```jsonc
 {
-  "sequence_id": "seq_arrival",       // NEW — which sequence this scene belongs to
-  "location_id": "lamp_room",         // NEW — reference into locations artifact
-  "cast": ["thomas"]                  // NEW — character ids present in this scene
-  // ...all existing fields (shot_language, narrative_role, character_actions,
-  //    required_assets, start/end_seconds) remain unchanged
+  "sequence_id": "seq_arrival",   // NEW — owning sequence
+  "location_id": "lamp_room",     // NEW — reference into locations
+  "cast": ["thomas"]              // NEW — character ids in this shot
+  // all existing fields (shot_language, narrative_role, character_actions,
+  //   required_assets, start/end_seconds) unchanged
 }
 ```
 
-No existing field is removed or made required. `character_actions[].character_id`
-continues to work and should validate against `cast`.
+No existing field is removed or made required.
 
-## 5. New pipeline manifest: `pipeline_defs/narrative-film.yaml`
+## 5. Pipeline manifest: `pipeline_defs/narrative-film.yaml`
 
 Follows the cinematic manifest structure (orchestration block, `required_skills`,
-`compatible_playbooks`, `stages[]` with `produces` / `required_artifacts_in` /
-`human_approval_default` / `review_focus` / `success_criteria`).
+`compatible_playbooks`, `stages[]`). Stage order = Option B:
 
-| Stage | Produces | Gate (`human_approval_default`) |
-|---|---|---|
-| `concept` | `story_bible` (logline, synopsis, world) | **true** |
-| `world_and_cast` | `cast`, `locations` | **true** |
-| `story` | `story` (acts/beats) | **true** |
-| `sequence_breakdown` | `sequence_plan` | **true** |
-| `scene_plan` | `scene_plan` (extended) | **true** |
-| `script` | `script` (timecoded, from story) | **true** |
-| `assets` | `asset_manifest` | false |
-| `edit` | `edit_decisions` | false |
-| `compose` | `render_report`, `final_review` | false |
-| `publish` | `publish_log` | true |
+| Stage | Produces | Gate (`human_approval_default`) | Key inputs |
+|---|---|---|---|
+| `concept` | `story_bible` | **true** | (idea) |
+| `characters` | `cast` (principals + identity) | **true** | story_bible |
+| `story` | `story` (acts/beats) | **true** | story_bible, cast |
+| `script` | `script` (screenplay) | **true** | story, cast |
+| `breakdown` | `locations`, `sequence_plan`, finalized `cast` | **true** | script |
+| `scene_plan` | `scene_plan` (shot list) | **true** | script, breakdown |
+| `assets` | `asset_manifest` | false | scene_plan |
+| `edit` | `edit_decisions` | false | scene_plan, asset_manifest |
+| `compose` | `render_report`, `final_review` | false | edit_decisions |
+| `publish` | `publish_log` | true | render_report |
 
 Notes:
+- Six creative gates up front is intentional — this pipeline is for users who
+  *want* to shape every layer. `default_checkpoint_policy: guided`. A future
+  "fast" policy could auto-advance early gates.
 - `reference_input.supported: true` (reuse the reference-video analyst path).
-- `source_media_review` listed in `world_and_cast` and `scene_plan` stage
-  `tools_available`, so provided footage/stills are inspected before planning.
-- Five creative gates up front is intentional — this pipeline is for users who
-  *want* to shape each layer. A `default_checkpoint_policy: guided` keeps it that
-  way; a future "fast" policy could auto-advance early gates.
+- `breakdown` and `scene_plan` list `source_media_review` in `tools_available`,
+  so provided footage/stills are inspected before planning.
 
-## 6. New director skills
-
-One per stage, under `skills/pipelines/narrative-film/`, matching the existing
-director-skill format (When To Use / Prerequisites table / Process / checklist):
+## 6. Director skills (`skills/pipelines/narrative-film/`)
 
 ```
-executive-producer.md      concept-director.md        world-cast-director.md
-story-director.md          sequence-director.md       scene-director.md
-script-director.md         asset-director.md          edit-director.md
-compose-director.md        publish-director.md
+executive-producer.md   concept-director.md     character-director.md
+story-director.md        script-director.md      breakdown-director.md
+scene-director.md        asset-director.md       edit-director.md
+compose-director.md      publish-director.md
 ```
 
-The `scene-director.md` reuses the existing 5-aspect shot checklist and adds:
-"resolve every `cast` id against the `cast` artifact and every `location_id`
-against `locations`; unresolved references are a CRITICAL finding."
+`scene-director.md` reuses the existing 5-aspect shot checklist and adds:
+"resolve every `cast` id against `cast` and every `location_id` against
+`locations`; unresolved references are a CRITICAL finding."
 
-## 7. Existing-asset injection (no new mechanism)
+## 7. Ingest at any altitude (existing-material support)
 
-This is fully covered by what's already in the repo:
+**Principle: every artifact is both an entry point and an override point.**
+Professionally, people join a production at any phase holding the prior phase's
+deliverables. The pipeline must support: *ingest at altitude N → derive
+everything above N by extraction → generate everything below N.*
 
-1. User drops files in the project (footage/stills) and/or music in `music_library/`.
-2. `world_and_cast` + `scene_plan` stages run `lib/source_media_review.review_source_media()`;
-   the reviewer raises CRITICAL if user media exists but wasn't inspected.
-3. `cast[].reference_assets` / `locations[].reference_assets` capture provided refs.
-4. `scene_plan.scenes[].required_assets[].source: "provided"` marks them in-plan.
-5. `asset_manifest` records provenance (`subtype`, `license: "user-provided"`,
-   `original_url`) — already supported.
+### 7.1 Entry-point matrix
+
+| You bring | Enter at | Back-fill upstream by | Pipeline still does |
+|---|---|---|---|
+| just an idea | `concept` | — | everything |
+| treatment / world bible | `story` | adopt as `story_bible` | story → … |
+| character designs + refs | (seeds `cast`) | — | the rest |
+| **a finished script** | `breakdown` | **extract cast / locations / sequences FROM the script** | board → produce → finish |
+| storyboards / shot list | `scene_plan` | reverse-map boards → `scene_plan` | produce → finish |
+| footage / stills / VO / music | `assets` | `source_media_review` (exists) | edit → finish |
+| a rough cut / EDL / timeline XML | `edit` | ingest timeline → `edit_decisions` | finish / color / titles |
+| a near-final | `compose` | — | color, titles, delivery |
+
+The critical row is **"a finished script"**: entering there must run the
+**breakdown in reverse** — derive cast/locations/sequences *by extraction* —
+rather than leaving the upstream entities empty. "Derive upward, generate
+downward."
+
+### 7.2 Three modes of "provided"
+
+Provided material carries intent; the agent must honor it:
+
+| Mode | Meaning | Agent behavior |
+|---|---|---|
+| **lock** | "This is THE script / cast / cut — don't touch it." | Validate, adopt verbatim, **never regenerate or silently overwrite.** |
+| **seed** | "Here's a draft — refine it." | Use as the starting artifact, improve, gate as normal. |
+| **reference** | "Inform the work, not the deliverable." | Influences only (like the existing reference-video / temp-score pattern); never copied. |
+
+### 7.3 Mechanics to add
+
+1. **Provided-artifact convention** — drop a finished/partial artifact (or raw
+   material) into the project with a manifest entry `{ artifact, mode }`.
+   Provenance recorded as `origin: user_provided`, visible downstream.
+2. **Ingestion adapters** *(the real net-new work)* — normalize external formats
+   into canonical artifacts: `.fdx` / Final Draft / PDF → `script`; storyboard
+   image folder → `scene_plan`; EDL / Premiere/FCP XML → `edit_decisions`; image
+   folder → `cast` / `locations` refs.
+3. **Reverse-derivation skills** — script → breakdown (cast/locations/sequences);
+   cut → scene list. So entering mid-pipeline still populates upstream context.
+4. **Lock enforcement + conflict reconciliation** — a `locked` artifact is never
+   regenerated; if provided pieces contradict (a character in the bible who
+   never appears in the locked script), the reviewer raises a finding instead of
+   silently choosing.
+
+### 7.4 What's already free
+
+- `checkpoint.get_next_stage()` — resuming mid-pipeline is the core loop; entering
+  at stage N is the same mechanism.
+- `source_media_review` — media ingestion + "inspect before planning" gate exists.
+- `required_artifacts_in` / `optional_artifacts_in` — a provided artifact simply
+  satisfies a stage input early.
+- Governance "No Unilateral Substitutions / no silent swaps" already forbids
+  overwriting user creative material — lock semantics extend a rule that exists.
 
 ## 8. Reuse vs. net-new (scope summary)
 
-**Net-new (the actual work):**
+**Net-new:**
 - 5 new schemas: `story_bible`, `cast`, `locations`, `story`, `sequence_plan`.
-- 3 additive fields on `scene_plan.schema.json`.
+- `script` screenplay extension + 3 additive `scene_plan` fields.
 - 1 manifest: `narrative-film.yaml`.
-- ~11 director skills.
+- ~11 director skills + ingestion/reverse-derivation skills.
+- Ingestion adapters (parsers) for `.fdx`/PDF, storyboard folders, EDL/XML.
+- Provided-artifact provenance/mode convention.
 - Contract tests in `tests/contracts/` + schema fixtures.
 
 **Reused unchanged:** checkpoint system, reviewer, cost tracker, tool registry,
-selectors, `script` / `asset_manifest` / `edit_decisions` / `render_report` /
-`publish_log` artifacts, `source_media_review`, style playbooks, composition
-runtimes (Remotion / HyperFrames / FFmpeg).
+selectors, `asset_manifest` / `edit_decisions` / `render_report` / `publish_log`,
+`source_media_review`, style playbooks, composition runtimes (Remotion /
+HyperFrames / FFmpeg).
 
-## 9. Open questions for the reviewer (you)
+## 9. Open questions for the reviewer
 
-1. **Bible vs. brief.** Should `story_bible` be its own artifact (proposed), or
-   should we extend `brief` with optional narrative fields? Separate artifact is
-   cleaner but adds a schema; extending `brief` reuses more but muddies the
-   marketing-oriented schema. *Recommendation: separate artifact.*
-2. **Story vs. script separation.** Keep `story` (beats) and `script` (timecode)
-   as two stages (proposed), or collapse into one? Two stages give a cleaner
-   "what happens" → "how it's narrated" gate. *Recommendation: keep separate.*
-3. **Cast identity methods.** For v1, support only `prompt` + `reference_image`
-   (works with current generators), and stub `lora` / `rig` as forward hooks?
-   *Recommendation: yes — ship the two that work today.*
-4. **Multi-deliverable scope.** This proposal keeps one render output per project
-   (like today). Do you also want per-sequence renders (each sequence as its own
-   clip)? That's a compose-stage extension we can add later.
-5. **Naming.** `narrative-film` vs `film` vs `story` as the pipeline name.
+1. **Bible vs. brief.** `story_bible` as its own artifact (proposed) vs. extending
+   `brief`. *Recommendation: separate artifact.* — **agreed: separate.**
+2. **Script as screenplay.** The existing `script` is timecoded narration
+   sections. A screenplay is scene-based (slugline/action/dialogue). Extend
+   `script` with an optional screenplay shape, or add a `screenplay` artifact?
+   *Recommendation: extend `script` with an optional `scenes[]` block so one
+   artifact serves both pipeline families.* **← needs your call.**
+3. **Cast identity methods.** v1 ships `prompt` + `reference_image`; stub
+   `lora`/`rig`. *Recommendation: yes.* — **agreed (Option B).**
+4. **Multi-deliverable scope.** One render per project (like today) vs. optional
+   per-sequence renders. *Defer to a later compose-stage extension.*
+5. **Pipeline name.** `narrative-film` vs `film` vs `story`.
+6. **Ingestion adapter scope for v1.** Which parsers ship first? *Recommendation:
+   `.fdx`/PDF → script and image-folder → refs first (highest value); EDL/XML cut
+   ingestion in a later phase.* **← confirm priority.**
 
 ## 10. Suggested implementation phases
 
-- **Phase 1 (schemas + manifest):** land the 5 schemas, the `scene_plan`
-  extension, and `narrative-film.yaml` with contract tests. Pipeline is
-  discoverable and validates, even before all skills are polished.
-- **Phase 2 (director skills):** author the 11 stage skills; wire the reference
-  and source-media paths.
-- **Phase 3 (dogfood):** run a short film end-to-end, tune the gates, document in
+- **Phase 1 — schemas + manifest:** 5 schemas, the `scene_plan` + `script`
+  extensions, `narrative-film.yaml`, contract tests. Pipeline is discoverable and
+  validates.
+- **Phase 2 — director skills:** author the stage skills; wire reference +
+  source-media paths.
+- **Phase 3 — ingest at altitude:** provided-artifact convention, the first
+  ingestion adapters (§9.6), and reverse-derivation skills (script → breakdown).
+- **Phase 4 — dogfood:** run a short film end-to-end; tune gates; document in
   `README.md` / `PROJECT_CONTEXT.md` / `AGENT_GUIDE.md` pipeline tables.
 
 ---
 
-*This is a design document only — no schemas, manifests, or skills have been
-created yet. Review §9 decisions before implementation begins.*
+*Design document only — no schemas, manifests, or skills created yet. Resolve
+§9.2 (script/screenplay) and §9.6 (adapter priority) before Phase 1.*

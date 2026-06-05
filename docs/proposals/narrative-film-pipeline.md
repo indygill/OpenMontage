@@ -437,7 +437,14 @@ HyperFrames / FFmpeg).
   principals). Stdlib-only. The director skills now point at these helpers.
   Covered by `tests/contracts/test_narrative_film_ingest.py` (18 tests). PDF
   ingestion raises a helpful "extract text then use fountain_to_script" error
-  (deferred, as planned).
+  (deferred, as planned). `lib/scaffold.py`'s `scaffold_project()` ties the
+  adapters + reverse-derivation + checkpoint writing together: move existing
+  files into a new project, mint canonical artifacts, write `completed`
+  checkpoints, and leave the project resumable at the first gap (see
+  `tests/contracts/test_scaffold_project.py`). Required fixing
+  `CANONICAL_STAGE_ARTIFACTS` in `lib/checkpoint.py`, which had no entries for
+  the new stages (`concept`/`characters`/`breakdown`/`brand_setup`/`brief`) and
+  would have `KeyError`ed on the first checkpoint.
 - **Phase 4 — dogfood — TODO.** Run a short film end-to-end; tune gates; add
   `narrative-film` to the pipeline tables in `README.md` / `PROJECT_CONTEXT.md` /
   `AGENT_GUIDE.md`.

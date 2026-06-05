@@ -67,6 +67,17 @@ serving read endpoints like `/api/projects`, `/api/project/<name>`,
 `/api/checkpoints/<name>`, `/api/render/<name>`. Same minimalism as a thin
 file-backed tool; runs locally alongside the agent.
 
+## Backfill / "Import existing material"
+
+A common ask: start a project from files you already have (a script, character
+refs) and have the agent pick up mid-pipeline. The engine for this exists —
+`lib/scaffold.py`'s `scaffold_project()` moves the files into place, mints
+canonical artifacts (via `lib/ingest.py`), writes `completed` checkpoints, and
+returns the `resume_stage`. The GUI's "New project → Import existing material"
+dropzone is just a front door that calls it. Note this is a **bounded setup-time
+write** done *before* any agent session is live (Regime B) — so it doesn't
+violate the read-only-observer rule for a *running* pipeline.
+
 ## Explicitly out of scope for v1 (noted for later)
 
 - **An [Approve] button that drives the agent.** That requires the "glue" hop:

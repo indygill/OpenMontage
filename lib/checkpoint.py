@@ -37,6 +37,14 @@ CANONICAL_STAGE_ARTIFACTS = {
     "edit": "edit_decisions",
     "compose": "render_report",
     "publish": "publish_log",
+    # narrative-film pipeline stages
+    "concept": "story_bible",
+    "characters": "cast",
+    "story": "story",
+    "breakdown": "sequence_plan",
+    # brand-narrative pipeline stages
+    "brand_setup": "brand_kit",
+    "brief": "brief",
 }
 
 # Additional artifacts that may be produced alongside canonical ones.

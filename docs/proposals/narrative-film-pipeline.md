@@ -424,10 +424,16 @@ HyperFrames / FFmpeg).
   `skills/pipelines/narrative-film/`, including the runtime-selection contract in
   the proposal- and compose-directors (passes
   `test_runtime_presentation_contract.py`).
-- **Phase 3 — ingest at altitude — TODO.** Provided-artifact convention, the
-  first ingestion adapters (§9.6: `.fdx`/PDF → script, image-folder → refs), and
-  reverse-derivation tooling (script → breakdown). The director skills already
-  describe the *behavior*; this phase adds the *parsers/tooling*.
+- **Phase 3 — ingest at altitude — DONE.** `lib/ingest.py` provides the
+  provided-material convention (`load_provided_manifest`, `entry_plan` →
+  derive-upward / generate-downward split), ingestion adapters
+  (`script_from_file` for `.fdx` / Fountain / `.txt` / `.json`,
+  `image_folder_to_reference_assets`), and reverse-derivation
+  (`derive_breakdown`: screenplay → cast / locations / sequence_plan, preserving
+  principals). Stdlib-only. The director skills now point at these helpers.
+  Covered by `tests/contracts/test_narrative_film_ingest.py` (18 tests). PDF
+  ingestion raises a helpful "extract text then use fountain_to_script" error
+  (deferred, as planned).
 - **Phase 4 — dogfood — TODO.** Run a short film end-to-end; tune gates; add
   `narrative-film` to the pipeline tables in `README.md` / `PROJECT_CONTEXT.md` /
   `AGENT_GUIDE.md`.
@@ -438,6 +444,6 @@ HyperFrames / FFmpeg).
 
 ---
 
-*Phases 1–2 implemented and tested. §9.2 (dual-shape script) and §9.6 (adapter
+*Phases 1–3 implemented and tested. §9.2 (dual-shape script) and §9.6 (adapter
 priority) resolved. Remaining open: §9.4 (per-sequence renders, deferred) and
 §9.5 (pipeline name — implemented as `narrative-film`).*

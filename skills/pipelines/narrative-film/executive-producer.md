@@ -18,10 +18,13 @@ and pause for human approval on creative gates.
 3. **Breakdown is derived from the script.** Locations, supporting cast, and
    sequences are extracted *from* the finished script — not invented before it.
 4. **Ingest at any altitude.** A user may arrive with existing material at any
-   level (treatment, script, storyboards, footage, a rough cut). Enter at the
-   matching stage, derive everything *above* by extraction, generate everything
-   *below*. See each director skill's "Ingest at altitude" note and §7 of
-   `docs/proposals/narrative-film-pipeline.md`.
+   level (treatment, script, storyboards, footage, a rough cut). Read the
+   provided-material manifest with `lib/ingest.load_provided_manifest(project)`
+   and compute where to start with `lib/ingest.entry_plan(provided)` — it returns
+   the entry stage, the upstream stages to derive by extraction, and the
+   downstream stages to generate. Enter at the matching stage, derive everything
+   *above*, generate everything *below*. See each director skill's "Ingest at
+   altitude" note and §7 of `docs/proposals/narrative-film-pipeline.md`.
 5. **Honor provided-material modes.** `lock` = use verbatim, never overwrite;
    `seed` = refine; `reference` = inform only. Never silently rewrite locked
    user material — that is a governance violation.

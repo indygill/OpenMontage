@@ -34,8 +34,10 @@ are defined here; the breakdown stage adds `tier: breakdown` characters later.
 ## Ingest at altitude
 
 If the user supplies character designs or reference images, adopt them
-(`origin: user_provided`). Locked references must be used verbatim. Image
-generation tools may produce identity sheets only with user approval (paid).
+(`origin: user_provided`). For a folder of reference images, use
+`lib/ingest.image_folder_to_reference_assets(folder, project_dir)` to enumerate
+them into `reference_assets` paths. Locked references must be used verbatim.
+Image generation tools may produce identity sheets only with user approval (paid).
 
 ## Review focus
 

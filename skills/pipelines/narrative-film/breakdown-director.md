@@ -28,10 +28,15 @@ supporting/minor cast, and sequences. This is exactly what a 1st AD does.
 ## Reverse-derivation (ingest at altitude)
 
 If the script was user-provided (`origin: user_provided`), this stage is the
-back-fill: everything here is **extracted from that script**. Do not fabricate
-locations or characters the script doesn't contain, and surface contradictions
-(e.g. a character in the bible who never appears in a locked script) as a finding
-rather than silently resolving them.
+back-fill: everything here is **extracted from that script**. Use
+`lib/ingest.derive_breakdown(script, existing_cast=cast)` for the mechanical
+first pass — it parses sluglines into `locations`, dialogue into `cast`
+(preserving principals, adding speaking parts as `tier: breakdown`), and groups
+scenes into a starting `sequence_plan`. Then **refine** the result (roles,
+descriptions, sequence boundaries) — the helper is the 1st-AD pass, not the
+final breakdown. Do not fabricate locations or characters the script doesn't
+contain, and surface contradictions (e.g. a character in the bible who never
+appears in a locked script) as a finding rather than silently resolving them.
 
 ## Review focus
 

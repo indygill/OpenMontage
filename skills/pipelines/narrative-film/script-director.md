@@ -32,8 +32,11 @@ scene-based `scenes[]` (used here). Set `form: "screenplay"` and populate
 ## Ingest at altitude (high-value entry point)
 
 A finished screenplay is the most common "enter mid-pipeline" case. If the user
-supplies a script (e.g. an imported `.fdx`/PDF normalized into the `script`
-artifact):
+supplies a script, normalize it with `lib/ingest.script_from_file(path)` — it
+dispatches `.fdx` (Final Draft), `.fountain`/`.txt` (Fountain), and `.json` to
+the right adapter and returns a screenplay-shaped `script` artifact
+(`origin: user_provided`). For PDF, extract text first, then
+`lib/ingest.fountain_to_script(text)`. Then:
 
 - Adopt it with `origin: user_provided`.
 - If mode is `lock`, **never rewrite it** — validate only.

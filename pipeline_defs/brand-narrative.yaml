@@ -1,0 +1,244 @@
+name: brand-narrative
+version: "1.0"
+description: >
+  Low-input, identity-first pipeline for on-brand short social videos. A reusable
+  brand_kit (logo, colors, fonts, voice, messaging, compliance) is set up once
+  and applied automatically to every video. Each brief produces a master plus
+  per-platform derivative renders (9:16 / 1:1 / 16:9). Brand consistency and
+  compliance are the primary quality bar; a brand-safety gate runs at compose.
+category: generated
+stability: beta
+default_checkpoint_policy: guided
+
+reference_input:
+  supported: true
+  analysis_depth: standard
+  analysis_tools:
+    - video_analyzer
+    - frame_sampler
+
+orchestration:
+  mode: executive-producer
+  skill: pipelines/brand-narrative/executive-producer
+  budget_default_usd: 1.50
+  max_revisions_per_stage: 2
+  max_send_backs: 2
+  max_wall_time_minutes: 12
+
+extensions:
+  custom_scripts: true
+  custom_playbooks: true
+  custom_skills: true
+  custom_tools: false
+
+required_skills:
+  - pipelines/brand-narrative/executive-producer
+  - pipelines/brand-narrative/brand-setup-director
+  - pipelines/brand-narrative/brief-director
+  - pipelines/brand-narrative/proposal-director
+  - pipelines/brand-narrative/script-director
+  - pipelines/brand-narrative/scene-director
+  - pipelines/brand-narrative/asset-director
+  - pipelines/brand-narrative/edit-director
+  - pipelines/brand-narrative/compose-director
+  - pipelines/brand-narrative/publish-director
+  - meta/reviewer
+  - meta/checkpoint-protocol
+  - meta/animation-runtime-selector
+
+compatible_playbooks:
+  recommended:
+    - flat-motion-graphics
+  also_works:
+    - clean-professional
+    - minimalist-diagram
+  custom_allowed: true
+
+stages:
+  - name: brand_setup
+    skill: pipelines/brand-narrative/brand-setup-director
+    produces:
+      - brand_kit
+    tools_available: []
+    checkpoint_required: true
+    human_approval_default: true
+    review_focus:
+      - Logo variants, color roles, and typography are complete and consistent
+      - Verbal identity (voice/tone, do/don't words, messaging) is concrete
+      - A brand TTS voice is set and a music style is chosen
+      - Compliance items (CTA, disclaimer, hashtags, handles) are captured
+    success_criteria:
+      - Schema-valid brand_kit artifact
+      - Visual facet has at least logo + colors + typography
+
+  - name: brief
+    skill: pipelines/brand-narrative/brief-director
+    required_artifacts_in:
+      - brand_kit
+    produces:
+      - brief
+    tools_available: []
+    checkpoint_required: true
+    human_approval_default: true
+    review_focus:
+      - Objective, key message, and CTA are clear and on-brand
+      - Target platform(s) and duration are realistic for the message
+      - The brief references the brand_kit and obeys its voice
+    success_criteria:
+      - Schema-valid brief artifact
+      - target_platform and target_duration_seconds are set
+
+  - name: proposal
+    skill: pipelines/brand-narrative/proposal-director
+    required_artifacts_in:
+      - brief
+      - brand_kit
+    produces:
+      - proposal_packet
+      - decision_log
+    tools_available: []
+    checkpoint_required: true
+    human_approval_default: true
+    review_focus:
+      - Both composition runtimes were presented and render_runtime is locked
+      - Target platforms and their aspect variants are listed
+      - Music plan is resolved (brand music style or library track)
+      - Cost estimate includes a per-item breakdown
+    success_criteria:
+      - Schema-valid proposal_packet artifact
+      - render_runtime locked and a render_runtime_selection decision logged
+      - Platform/aspect variant list is present
+
+  - name: script
+    skill: pipelines/brand-narrative/script-director
+    required_artifacts_in:
+      - brief
+      - brand_kit
+    produces:
+      - script
+    tools_available: []
+    checkpoint_required: true
+    human_approval_default: false
+    review_focus:
+      - Copy uses the brand voice and avoids dont_words
+      - Hook lands in the first 2 seconds for social
+      - Required CTA is present near the end
+    success_criteria:
+      - Schema-valid script artifact
+
+  - name: scene_plan
+    skill: pipelines/brand-narrative/scene-director
+    required_artifacts_in:
+      - script
+      - brand_kit
+    produces:
+      - scene_plan
+    optional_tools:
+      - frame_sampler
+    tools_available:
+      - frame_sampler
+    checkpoint_required: true
+    human_approval_default: false
+    review_focus:
+      - Shots are styled by the brand playbook
+      - Logo placement respects the brand safe-area
+      - Pacing suits short-form social
+    success_criteria:
+      - Schema-valid scene_plan artifact
+
+  - name: assets
+    skill: pipelines/brand-narrative/asset-director
+    required_artifacts_in:
+      - scene_plan
+      - brand_kit
+    produces:
+      - asset_manifest
+    optional_tools:
+      - image_selector
+      - video_selector
+      - tts_selector
+      - subtitle_gen
+      - pixabay_music
+      - music_gen
+    tools_available:
+      - image_selector
+      - video_selector
+      - tts_selector
+      - subtitle_gen
+      - pixabay_music
+      - music_gen
+    checkpoint_required: true
+    human_approval_default: false
+    review_focus:
+      - Narration uses the locked brand TTS voice
+      - Visuals are on-palette and on-style
+      - Logo asset and any provided brand assets are reused, not regenerated
+    success_criteria:
+      - Schema-valid asset_manifest artifact
+      - All referenced asset files exist on disk
+
+  - name: edit
+    skill: pipelines/brand-narrative/edit-director
+    required_artifacts_in:
+      - scene_plan
+      - asset_manifest
+    produces:
+      - edit_decisions
+    tools_available: []
+    checkpoint_required: true
+    human_approval_default: false
+    review_focus:
+      - Pacing is tight for social
+      - render_runtime carried unchanged from the locked choice
+    success_criteria:
+      - Schema-valid edit_decisions artifact
+
+  - name: compose
+    skill: pipelines/brand-narrative/compose-director
+    required_artifacts_in:
+      - edit_decisions
+      - asset_manifest
+      - brand_kit
+    produces:
+      - render_report
+      - final_review
+    required_tools:
+      - video_compose
+      - audio_mixer
+    optional_tools:
+      - video_stitch
+      - color_grade
+    tools_available:
+      - video_compose
+      - hyperframes_compose
+      - audio_mixer
+      - video_stitch
+      - color_grade
+    checkpoint_required: true
+    human_approval_default: false
+    review_focus:
+      - Brand-safety gate passed (logo safe-area, contrast, required CTA/disclaimer)
+      - Per-platform derivative renders produced for each target aspect
+      - "render_runtime in edit_decisions matches the locked choice — silent swap is a CRITICAL governance violation"
+    success_criteria:
+      - Schema-valid render_report artifact
+      - One master output plus a derivative output per target platform
+
+  - name: publish
+    skill: pipelines/brand-narrative/publish-director
+    required_artifacts_in:
+      - render_report
+      - brand_kit
+    optional_artifacts_in:
+      - final_review
+    produces:
+      - publish_log
+    tools_available: []
+    checkpoint_required: true
+    human_approval_default: true
+    review_focus:
+      - Per-platform copy, hashtags, and handles come from the brand_kit compliance facet
+      - Required CTA is present in every platform caption
+    success_criteria:
+      - Schema-valid publish_log artifact
+      - Export package contains per-platform videos and metadata

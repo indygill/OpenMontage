@@ -277,6 +277,7 @@ Each pipeline is a complete production workflow, from idea to finished video.
 |----------|-----------------|----------|
 | **Animated Explainer** | AI-generated explainer with research, narration, visuals, music | Educational content, tutorials, topic breakdowns |
 | **Animation** | Motion graphics, kinetic typography, animated sequences | Social media, product demos, abstract concepts |
+| **Brand Narrative** | Low-input on-brand social videos from a reusable brand kit (logo, colors, fonts, voice, messaging, compliance); multi-aspect per-platform renders | Social campaigns, product promos, brand-consistent content at volume |
 | **Avatar Spokesperson** | Avatar-driven presenter videos | Corporate comms, training, announcements |
 | **Cinematic** | Trailer, teaser, and mood-driven edits | Brand films, teasers, promotional content |
 | **Clip Factory** | Batch of ranked short-form clips from one long source | Repurposing long content for social media |
@@ -308,7 +309,7 @@ Most "free AI video" stacks quietly mean "animate still images." OpenMontage can
 
 Edit your own talking-head footage. Generate a fully animated explainer from scratch. Cut a 2-hour podcast into a dozen social clips. Translate and dub your content into 10 languages. Build a cinematic brand teaser from stock footage and AI-generated scenes. **If a production team can make it, OpenMontage can orchestrate it.**
 
-- **13 production pipelines** — explainers, talking heads, screen demos, cinematic trailers, narrative films, animations, podcasts, localization, documentary montages, and more
+- **14 production pipelines** — explainers, talking heads, screen demos, cinematic trailers, narrative films, brand/social videos, animations, podcasts, localization, documentary montages, and more
 - **52 production tools** — spanning video generation, image creation, text-to-speech, music, audio mixing, subtitles, enhancement, and analysis
 - **400+ agent skills** — production skills, pipeline directors, creative techniques, quality checklists, and deep technology knowledge packs that teach the agent how to use every tool like an expert
 - **Reference-driven creation** — paste a video you like and the agent turns it into a grounded, differentiated production plan instead of forcing you to invent the perfect prompt from scratch

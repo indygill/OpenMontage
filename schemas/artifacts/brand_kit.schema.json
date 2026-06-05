@@ -1,0 +1,118 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "openmontage/artifacts/brand_kit",
+  "title": "Brand Kit",
+  "description": "Reusable brand identity for the brand-narrative pipeline: visual, verbal, audio, and compliance facets. Created once per brand and reused across many videos. Stored at brands/<brand>/brand_kit.json.",
+  "type": "object",
+  "required": ["version", "brand_name", "visual"],
+  "properties": {
+    "version": { "type": "string", "const": "1.0" },
+    "brand_name": { "type": "string", "minLength": 1 },
+    "visual": {
+      "type": "object",
+      "required": ["colors"],
+      "properties": {
+        "logo": {
+          "type": "object",
+          "properties": {
+            "variants": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["kind", "path"],
+                "properties": {
+                  "kind": { "type": "string", "enum": ["full", "mark", "mono", "reversed", "icon"] },
+                  "path": { "type": "string" }
+                },
+                "additionalProperties": false
+              }
+            },
+            "safe_area_pct": { "type": "number", "minimum": 0, "maximum": 50 },
+            "min_size_px": { "type": "integer", "minimum": 1 },
+            "default_placement": {
+              "type": "string",
+              "enum": ["top_left", "top_right", "bottom_left", "bottom_right", "center"]
+            }
+          },
+          "additionalProperties": false
+        },
+        "colors": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["role", "hex"],
+            "properties": {
+              "role": { "type": "string", "description": "e.g. primary, secondary, accent, neutral" },
+              "hex": { "type": "string", "pattern": "^#?[0-9A-Fa-f]{3,8}$" },
+              "usage": { "type": "string" }
+            },
+            "additionalProperties": false
+          }
+        },
+        "typography": {
+          "type": "object",
+          "properties": {
+            "heading_font": { "type": "string" },
+            "body_font": { "type": "string" },
+            "weights": { "type": "array", "items": { "type": "integer" } }
+          },
+          "additionalProperties": false
+        },
+        "style_playbook": { "type": "string", "description": "Name of the generated style playbook holding the visual tokens" },
+        "motion_signature": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "verbal": {
+      "type": "object",
+      "properties": {
+        "voice_tone": { "type": "string" },
+        "tagline": { "type": "string" },
+        "messaging_pillars": { "type": "array", "items": { "type": "string" } },
+        "do_words": { "type": "array", "items": { "type": "string" } },
+        "dont_words": { "type": "array", "items": { "type": "string" } },
+        "reading_level": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "audio": {
+      "type": "object",
+      "properties": {
+        "tts_voice": {
+          "type": "object",
+          "required": ["provider", "voice_id"],
+          "properties": {
+            "provider": { "type": "string" },
+            "voice_id": { "type": "string" }
+          },
+          "additionalProperties": false
+        },
+        "music_style": { "type": "string" },
+        "sonic_logo_path": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "compliance": {
+      "type": "object",
+      "properties": {
+        "required_cta": { "type": "string" },
+        "disclaimer": { "type": "string" },
+        "hashtags": { "type": "array", "items": { "type": "string" } },
+        "handles": {
+          "type": "object",
+          "additionalProperties": { "type": "string" },
+          "description": "platform -> @handle"
+        }
+      },
+      "additionalProperties": false
+    },
+    "origin": {
+      "type": "string",
+      "enum": ["generated", "user_provided"],
+      "default": "user_provided"
+    },
+    "metadata": { "type": "object" }
+  },
+  "additionalProperties": false
+}

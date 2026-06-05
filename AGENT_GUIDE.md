@@ -230,6 +230,7 @@ If the folder has tracks, the proposal and asset stages should present them as o
 | `podcast-repurpose` | Podcast highlights and derivatives | beta |
 | `cinematic` | Trailer, teaser, and mood-led edits | production |
 | `narrative-film` | Story-driven short films: world, cast, screenplay, sequences, shots | beta |
+| `brand-narrative` | Low-input on-brand social videos from a reusable brand kit (logo, colors, voice, compliance) | beta |
 | `animation` | Motion-graphics and animation-first videos | production |
 | `character-animation` | Local rigged cartoon characters and reusable character acting | beta |
 | `hybrid` | Source footage plus support visuals | production |

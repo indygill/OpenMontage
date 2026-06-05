@@ -168,31 +168,36 @@ checkpoints, reviewer, cost tracker, composition runtimes.
    doing in a Phase 3).
 2. **Brand kit scope.** — **resolved: all four facets** (visual, verbal, audio,
    compliance).
-3. **brand_kit location.** Per-brand reusable across projects: store at
-   `brands/<brand>/brand_kit.json` (shared) vs. inside each `projects/<name>/`?
-   *Recommendation: a shared `brands/<brand>/` workspace, referenced by project.*
-   **← needs your call.**
-4. **Brand TTS voice.** v1 uses an existing `voice_id`; voice **cloning** as a
-   later add. *Recommendation: existing voice_id for v1.*
+3. **brand_kit location.** — **resolved: shared `brands/<brand>/brand_kit.json`**,
+   reusable across projects. `brand_setup` is skipped when it already exists.
+4. **Brand TTS voice.** — **resolved: existing `voice_id` for v1.** Voice cloning
+   is a later add.
 5. **Campaign layer.** Group multiple videos under a campaign sharing one brief
    theme? *Defer to a later enhancement; v1 is one brief → one (multi-aspect)
    deliverable.*
 
-## 8. Suggested implementation phases
+## 8. Implementation phases
 
-- **Phase 1 — schema + manifest:** `brand_kit.schema.json`,
-  `pipeline_defs/brand-narrative.yaml` (reusing `brief` et al.), register the
-  artifact, contract tests. Discoverable and validating.
-- **Phase 2 — director skills + brand-safety gate:** the ~9 stage skills
-  (proposal/compose carry the runtime contract) and the compose-time brand-safety
-  checks; wire multi-aspect derivative renders.
-- **Phase 3 — auto-onboarding (optional):** extract a brand_kit from a URL/brand
-  guide via the `visual-style` skill — the biggest further cut to user input.
-- **Phase 4 — dogfood + docs:** run a brand brief end-to-end across 3 aspects;
-  register `brand-narrative` in the pipeline tables.
+- **Phase 1 — schema + manifest — DONE.** `brand_kit.schema.json` (4 facets),
+  `pipeline_defs/brand-narrative.yaml` (reuses `brief`), artifact registered,
+  `tests/contracts/test_brand_narrative_pipeline.py`. Discoverable and validating.
+- **Phase 2 — director skills — DONE.** 10 stage skills under
+  `skills/pipelines/brand-narrative/`; proposal- and compose-directors carry the
+  runtime contract (passes `test_runtime_presentation_contract.py`). The
+  compose-director describes the brand-safety gate and multi-aspect derivative
+  renders.
+- **Phase 3 — auto-onboarding (optional) — TODO.** Extract a brand_kit from a
+  URL/brand guide via the `visual-style` skill — the biggest further cut to user
+  input. (v1 is manual entry.)
+- **Phase 4 — dogfood + docs — partial.** `brand-narrative` registered in the
+  pipeline tables; a real end-to-end render across 3 aspects needs the tool
+  environment (Node/Remotion/HyperFrames + provider keys).
+
+> The brand-safety gate is currently expressed as compose-director instructions +
+> review_focus. A dedicated `lib/brand_safety.py` helper (contrast/logo checks)
+> could harden it in a later pass.
 
 ---
 
-*Design document only — no schemas, manifests, or skills created yet. §7.1
-(manual onboarding) and §7.2 (all four facets) resolved. Open: §7.3 (brand_kit
-location) and §7.4 (TTS voice) before Phase 1.*
+*Phases 1–2 implemented and tested. All four §7 questions resolved (manual
+onboarding, all four facets, shared `brands/<brand>/` location, existing voice_id).*

@@ -93,6 +93,7 @@ Each tool's `agent_skills[]` field bridges Layer 1 → Layer 3. See `skills/INDE
 | `animation` | `pipeline_defs/animation.yaml` | Animation-first |
 | `character-animation` | `pipeline_defs/character-animation.yaml` | Local rigged character animation |
 | `narrative-film` | `pipeline_defs/narrative-film.yaml` | Story-driven film (world, cast, screenplay, sequences, shots) |
+| `brand-narrative` | `pipeline_defs/brand-narrative.yaml` | Low-input on-brand social videos from a reusable brand kit |
 | `hybrid` | `pipeline_defs/hybrid.yaml` | Source-plus-support hybrid |
 | `avatar-spokesperson` | `pipeline_defs/avatar-spokesperson.yaml` | Avatar presenter |
 | `localization-dub` | `pipeline_defs/localization-dub.yaml` | Localization and dubbing |

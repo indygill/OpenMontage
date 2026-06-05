@@ -36,6 +36,7 @@ ARTIFACT_NAMES = [
     "locations",
     "story",
     "sequence_plan",
+    "brand_kit",
 ]
 
 

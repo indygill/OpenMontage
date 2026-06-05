@@ -21,7 +21,16 @@
           "fps": { "type": "number" },
           "duration_seconds": { "type": "number", "minimum": 0 },
           "file_size_bytes": { "type": "integer" },
-          "platform_target": { "type": "string" }
+          "platform_target": { "type": "string" },
+          "role": {
+            "type": "string",
+            "enum": ["hero", "full", "per_sequence", "derivative"],
+            "description": "What this output is. 'hero'/'full' = the complete deliverable; 'per_sequence' = a single sequence rendered as its own clip (set sequence_id); 'derivative' = an aspect/platform variant."
+          },
+          "sequence_id": {
+            "type": "string",
+            "description": "When role='per_sequence', the sequence_plan sequence this clip renders."
+          }
         },
         "additionalProperties": false
       },

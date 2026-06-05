@@ -92,6 +92,7 @@ Each tool's `agent_skills[]` field bridges Layer 1 → Layer 3. See `skills/INDE
 | `cinematic` | `pipeline_defs/cinematic.yaml` | Cinematic edit |
 | `animation` | `pipeline_defs/animation.yaml` | Animation-first |
 | `character-animation` | `pipeline_defs/character-animation.yaml` | Local rigged character animation |
+| `narrative-film` | `pipeline_defs/narrative-film.yaml` | Story-driven film (world, cast, screenplay, sequences, shots) |
 | `hybrid` | `pipeline_defs/hybrid.yaml` | Source-plus-support hybrid |
 | `avatar-spokesperson` | `pipeline_defs/avatar-spokesperson.yaml` | Avatar presenter |
 | `localization-dub` | `pipeline_defs/localization-dub.yaml` | Localization and dubbing |

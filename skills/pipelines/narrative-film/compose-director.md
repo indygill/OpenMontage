@@ -35,9 +35,25 @@ must verify the contract:
 | **HyperFrames** | HTML/CSS/GSAP kinetic titles, SVG character rigs, shader transitions | Node ≥ 22 + FFmpeg + `npx hyperframes` |
 | **FFmpeg** | Cuts, concat, subtitle burn, simple source assembly | `ffmpeg` (always available) |
 
+## Per-sequence renders (optional)
+
+If the proposal opted into per-sequence renders, emit one clip per sequence in
+addition to the full film:
+
+1. Group the `edit_decisions` cuts by sequence using the `scene_plan` shots'
+   `sequence_id` (each shot maps to a sequence; cuts reference those shots/assets).
+2. Render each group as its own output, in `sequence_plan.order`.
+3. Record every output in `render_report.outputs[]` with a `role`: the complete
+   film as `role: "hero"` (or `"full"`), each sequence clip as
+   `role: "per_sequence"` with its `sequence_id`. Aspect/platform variants use
+   `role: "derivative"`.
+
+All clips use the same locked `render_runtime`. If only the full film was
+requested, emit a single `role: "hero"` output as usual.
+
 ## Verify
 
-Run `ffprobe` on the output; record encoding profile, duration, and resolution
+Run `ffprobe` on every output; record encoding profile, duration, and resolution
 in `render_report`. Confirm the output matches the approved tone and grade.
 
 ## Review focus

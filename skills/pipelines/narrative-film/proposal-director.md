@@ -43,6 +43,13 @@ chosen runtime is a commitment. Silent downgrade to a still-led animatic or
 FFmpeg Ken Burns is forbidden; if the runtime becomes unavailable at compose
 time, escalate rather than substitute.
 
+## Render scope
+
+Ask whether the deliverable is the **full film only** (default) or **also
+per-sequence clips** (each sequence rendered as its own clip — useful for social
+cutdowns or chaptered release). Record the choice in the production plan; compose
+honors it. Both use the same locked `render_runtime`.
+
 ## Music plan (mandatory)
 
 Resolve music now, not at the asset stage. Check `music_library/` first, then

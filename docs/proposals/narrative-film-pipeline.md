@@ -405,8 +405,12 @@ HyperFrames / FFmpeg).
    artifact.
 3. **Cast identity methods.** v1 ships `prompt` + `reference_image`; stub
    `lora`/`rig`. *Recommendation: yes.* — **agreed (Option B).**
-4. **Multi-deliverable scope.** One render per project (like today) vs. optional
-   per-sequence renders. *Defer to a later compose-stage extension.*
+4. **Multi-deliverable scope.** — **resolved: supported (additive).**
+   `render_report.outputs[]` is already an array; added optional `role`
+   (`hero`/`full`/`per_sequence`/`derivative`) and `sequence_id` fields. The
+   proposal-director asks full-film-only (default) vs. also-per-sequence; the
+   compose-director groups cuts by sequence and emits one clip per sequence. No
+   `edit_decisions` change needed (sequence grouping derives from `scene_plan`).
 5. **Pipeline name.** `narrative-film` vs `film` vs `story`.
 6. **Ingestion adapter scope for v1.** — **resolved.** Ship `.fdx`/PDF → script
    and image-folder → `cast`/`locations` refs first; EDL / timeline-XML cut

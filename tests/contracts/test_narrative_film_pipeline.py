@@ -233,3 +233,34 @@ def test_scene_plan_legacy_without_narrative_fields_still_validates():
             "start_seconds": 0, "end_seconds": 3,
         }],
     })
+
+
+# ---- render_report per-sequence outputs (additive, backward-compatible) ----
+
+def test_render_report_per_sequence_outputs_validate():
+    validate_artifact("render_report", {
+        "version": "1.0",
+        "outputs": [
+            {"path": "renders/final.mp4", "format": "mp4", "resolution": "1920x800",
+             "duration_seconds": 240, "role": "hero"},
+            {"path": "renders/seq_arrival.mp4", "format": "mp4", "resolution": "1920x800",
+             "duration_seconds": 48, "role": "per_sequence", "sequence_id": "seq_arrival"},
+        ],
+    })
+
+
+def test_render_report_legacy_outputs_still_validate():
+    validate_artifact("render_report", {
+        "version": "1.0",
+        "outputs": [{"path": "renders/final.mp4", "format": "mp4",
+                     "resolution": "1920x1080", "duration_seconds": 60}],
+    })
+
+
+def test_render_report_rejects_bad_role():
+    with pytest.raises(Exception):
+        validate_artifact("render_report", {
+            "version": "1.0",
+            "outputs": [{"path": "x.mp4", "format": "mp4", "resolution": "1x1",
+                         "duration_seconds": 1, "role": "teaser"}],
+        })

@@ -283,6 +283,7 @@ Each pipeline is a complete production workflow, from idea to finished video.
 | **Documentary Montage** | Thematic montage cut from a CLIP-indexed corpus of free stock footage and open archives (Pexels, Archive.org, NASA, Wikimedia, Unsplash) | Video essays, mood pieces, retrieval-first B-roll edits, real-footage videos without paid generation APIs |
 | **Hybrid** | Source footage + AI-generated support visuals | Enhancing existing footage with graphics |
 | **Localization & Dub** | Subtitle, dub, and translate existing video | Multi-language distribution |
+| **Narrative Film** | Story-driven short films built like a real production: logline & synopsis, world, cast, screenplay, breakdown, sequences, shots. Ingests existing material (script, footage, rough cut) at any stage | Short films, scripted scenes, pitch proofs, story-first video |
 | **Podcast Repurpose** | Podcast highlights to video | Podcast marketing, audiogram videos |
 | **Screen Demo** | Polished software screen recordings and walkthroughs | Product demos, tutorials, documentation |
 | **Talking Head** | Footage-led speaker videos | Presentations, vlogs, interviews |
@@ -307,7 +308,7 @@ Most "free AI video" stacks quietly mean "animate still images." OpenMontage can
 
 Edit your own talking-head footage. Generate a fully animated explainer from scratch. Cut a 2-hour podcast into a dozen social clips. Translate and dub your content into 10 languages. Build a cinematic brand teaser from stock footage and AI-generated scenes. **If a production team can make it, OpenMontage can orchestrate it.**
 
-- **12 production pipelines** — explainers, talking heads, screen demos, cinematic trailers, animations, podcasts, localization, documentary montages, and more
+- **13 production pipelines** — explainers, talking heads, screen demos, cinematic trailers, narrative films, animations, podcasts, localization, documentary montages, and more
 - **52 production tools** — spanning video generation, image creation, text-to-speech, music, audio mixing, subtitles, enhancement, and analysis
 - **400+ agent skills** — production skills, pipeline directors, creative techniques, quality checklists, and deep technology knowledge packs that teach the agent how to use every tool like an expert
 - **Reference-driven creation** — paste a video you like and the agent turns it into a grounded, differentiated production plan instead of forcing you to invent the perfect prompt from scratch

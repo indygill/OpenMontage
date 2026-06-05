@@ -229,6 +229,7 @@ If the folder has tracks, the proposal and asset stages should present them as o
 | `clip-factory` | Many clips from one long source | beta |
 | `podcast-repurpose` | Podcast highlights and derivatives | beta |
 | `cinematic` | Trailer, teaser, and mood-led edits | production |
+| `narrative-film` | Story-driven short films: world, cast, screenplay, sequences, shots | beta |
 | `animation` | Motion-graphics and animation-first videos | production |
 | `character-animation` | Local rigged cartoon characters and reusable character acting | beta |
 | `hybrid` | Source footage plus support visuals | production |

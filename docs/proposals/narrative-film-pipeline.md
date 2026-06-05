@@ -1,6 +1,6 @@
 # Design Proposal: `narrative-film` Pipeline
 
-> Status: **Draft for review (rev 2)** | Author: agent-assisted design | Date: 2026-06-05
+> Status: **Approved design (rev 3)** | Author: agent-assisted design | Date: 2026-06-05
 >
 > Purpose: add a film-production hierarchy to OpenMontage so a user can drive a
 > project the way a director thinks — *project → logline & synopsis → world →
@@ -79,7 +79,7 @@ should use "shot" in user-facing language to avoid confusing a real director.
 | World | `story_bible.world` (§4.1) | **new** | Narrative world; pairs with a visual style playbook. |
 | Characters | `cast` (§4.2) | **new** | Generalizes the rigged-cartoon `character_design` schema. |
 | Story | `story` (§4.4) | **new** | Act/beat outline; precedes the screenplay. |
-| Script | `script` (existing, screenplay variant) | **extend** | Screenplay scenes, not just timecoded narration (§9.2). |
+| Script | `script` (extended, dual-shape) | **extend** | Carries BOTH timecoded `sections[]` (narration) and screenplay `scenes[]` (§4.7). |
 | Locations | `locations` (§4.3) | **new** | Derived in breakdown. |
 | Sequence | `sequence_plan` (§4.5) | **new** | Grouping layer, derived from script. |
 | Shot | `scene_plan` (§4.6) | **extend** | Add `cast`, `location_id`, `sequence_id`. |
@@ -235,6 +235,44 @@ item (existing pipelines ignore them):
 
 No existing field is removed or made required.
 
+### 4.7 `script` (extend existing) — dual-shape, supports both forms
+
+The existing `script` artifact is timecoded narration: `sections[]` with
+`start/end_seconds`, `text`, `enhancement_cues`. A screenplay is scene-based
+(slugline / action / dialogue) and has no timecode. **We support both** in one
+artifact so a single schema serves the explainer family *and* the narrative-film
+family. `form` declares which shape is authoritative; the other may be present
+(e.g. narration auto-derived from a screenplay).
+
+```jsonc
+{
+  "version": "1.0",
+  "title": "The Lighthouse Keeper",
+  "form": "screenplay",              // "narration" | "screenplay"
+  "total_duration_seconds": 240,     // required for narration; optional for screenplay
+  "sections": [ /* existing timecoded narration shape — unchanged */ ],
+  "scenes": [                         // NEW — screenplay shape
+    {
+      "id": "sc_001",
+      "sequence_id": "seq_arrival",
+      "slugline": "EXT. ISLAND JETTY - DAY",
+      "location_id": "lamp_room",     // resolves against locations
+      "action": "The supply boat pulls away. Thomas stands alone with his trunk.",
+      "cast": ["thomas"],             // resolves against cast
+      "dialogue": [
+        { "character_id": "thomas", "line": "Just me, then.", "parenthetical": "to himself" }
+      ]
+    }
+  ],
+  "metadata": {}
+}
+```
+
+Rules: exactly one of `sections[]` / `scenes[]` must be non-empty and must match
+`form`. Screenplay `scenes[].id` are the anchors the `breakdown` and `scene_plan`
+(shot list) stages reference — i.e. one screenplay scene fans out into multiple
+shots. Existing pipelines set `form: "narration"` and are unaffected.
+
 ## 5. Pipeline manifest: `pipeline_defs/narrative-film.yaml`
 
 Follows the cinematic manifest structure (orchestration block, `required_skills`,
@@ -355,19 +393,18 @@ HyperFrames / FFmpeg).
 
 1. **Bible vs. brief.** `story_bible` as its own artifact (proposed) vs. extending
    `brief`. *Recommendation: separate artifact.* — **agreed: separate.**
-2. **Script as screenplay.** The existing `script` is timecoded narration
-   sections. A screenplay is scene-based (slugline/action/dialogue). Extend
-   `script` with an optional screenplay shape, or add a `screenplay` artifact?
-   *Recommendation: extend `script` with an optional `scenes[]` block so one
-   artifact serves both pipeline families.* **← needs your call.**
+2. **Script as screenplay.** — **resolved: support both.** One `script` artifact
+   carries both shapes (§4.7): existing timecoded `sections[]` (narration) plus a
+   new screenplay `scenes[]` block, selected by `form`. No separate `screenplay`
+   artifact.
 3. **Cast identity methods.** v1 ships `prompt` + `reference_image`; stub
    `lora`/`rig`. *Recommendation: yes.* — **agreed (Option B).**
 4. **Multi-deliverable scope.** One render per project (like today) vs. optional
    per-sequence renders. *Defer to a later compose-stage extension.*
 5. **Pipeline name.** `narrative-film` vs `film` vs `story`.
-6. **Ingestion adapter scope for v1.** Which parsers ship first? *Recommendation:
-   `.fdx`/PDF → script and image-folder → refs first (highest value); EDL/XML cut
-   ingestion in a later phase.* **← confirm priority.**
+6. **Ingestion adapter scope for v1.** — **resolved.** Ship `.fdx`/PDF → script
+   and image-folder → `cast`/`locations` refs first; EDL / timeline-XML cut
+   ingestion in a later phase.
 
 ## 10. Suggested implementation phases
 
@@ -383,5 +420,7 @@ HyperFrames / FFmpeg).
 
 ---
 
-*Design document only — no schemas, manifests, or skills created yet. Resolve
-§9.2 (script/screenplay) and §9.6 (adapter priority) before Phase 1.*
+*Design document only — no schemas, manifests, or skills created yet. §9.2
+(dual-shape script) and §9.6 (adapter priority) are resolved. Remaining open:
+§9.4 (per-sequence renders, deferred) and §9.5 (pipeline name). Phase 1 is ready
+to begin.*
